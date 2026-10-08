@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, progress, timeline, project_finance, empty %}
+{% block title %}{{ p.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ p.name }}</h1>
+<p class="kv-inline"><span>{{ badge(p.status) }}</span><span>{{ p.category }}</span>{% if p.location %}<span>{{ p.location }}</span>{% endif %}
+{% if p.partner %}<span>Partner: <strong>{{ p.partner.name }}</strong></span>{% endif %}</p></div></div>
+<div class="grid grid-2">
+  <section class="card">
+    <h2>About the project</h2>
+    {{ p.description|paragraphs }}
+    {{ progress(p.progress_percent, "Completion") }}
+    <p class="kv-inline small">
+      {% if p.start_date %}<span>Started <strong>{{ p.start_date|date }}</strong></span>{% endif %}
+      {% if p.expected_end_date %}<span>Expected completion <strong>{{ p.expected_end_date|date }}</strong></span>{% endif %}
+      {% if p.actual_end_date %}<span>Completed <strong>{{ p.actual_end_date|date }}</strong></span>{% endif %}
+    </p>
+    {% if p.risks %}<h3>Risks</h3>{{ p.risks|paragraphs }}{% endif %}
+    {% if p.milestones %}
+    <h3>Milestones</h3>
+    <ul>{% for m in p.milestones %}<li>{{ m.title }} {% if m.due_date %}<span class="muted small">({{ m.due_date|date }})</span>{% endif %} {{ badge(m.status) }}</li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+  <section class="card">
+    <h2>Project finances</h2>
+    {{ project_finance(fin) }}
+  </section>
+</div>
+{% if photos %}<h2>Photographs</h2><div class="photo-grid">{% for d in photos %}<img src="{{ url_for('public.project_file', project_id=p.id, doc_id=d.id) }}" alt="{{ d.title }}">{% endfor %}</div>{% endif %}
+{% if docs %}<h2>Documents</h2><ul>{% for d in docs %}<li><a href="{{ url_for('public.project_file', project_id=p.id, doc_id=d.id) }}">{{ d.title }}</a> <span class="small muted">({{ d.kind|replace('_',' ') }}, {{ d.uploaded_at|date }})</span></li>{% endfor %}</ul>{% endif %}
+<h2>Timeline</h2>
+{{ timeline(events) }}
+{% endblock %}

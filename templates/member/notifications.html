@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, empty %}
+{% block title %}{{ _('Notifications') }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ _('Notifications') }}</h1>
+{% if items %}<form method="post" class="actions">{{ csrf() }}<button class="btn secondary" type="submit">Mark all as read</button></form>{% endif %}</div>
+{% if items %}
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">When</th><th scope="col">Message</th><th scope="col">SMS</th><th scope="col">Email</th></tr></thead>
+<tbody>{% for n in items %}<tr><td>{{ n.created_at|dt }}{% if not n.read_at %} <span class="badge pending">New</span>{% endif %}</td><td><strong>{{ n.title }}</strong><br>{{ n.body }}</td><td class="small">{{ n.sms_status|replace('_',' ') }}</td><td class="small">{{ n.email_status|replace('_',' ') }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}{{ empty("No notifications.") }}{% endif %}
+{% endblock %}

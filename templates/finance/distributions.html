@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, empty %}
+{% block title %}Distributions{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Profit distributions</h1>{% if can('manage_distributions') and not problems %}<div class="actions"><a class="btn" href="{{ url_for('distributions.new') }}">Calculate a distribution</a></div>{% endif %}</div>
+{% if problems %}
+<p class="notice"><strong>Distribution rules are not configured.</strong> The system will not guess who is eligible. {{ problems|join(' ') }}
+{% if can('manage_settings') %}<a href="{{ url_for('admin.settings') }}#distribution">Configure the rules</a>{% else %}Ask a Super Admin to configure them.{% endif %}</p>
+{% else %}
+<div class="card"><h2>Current rules</h2><ul>{% for line in rules %}<li>{{ line }}</li>{% endfor %}</ul></div>
+{% endif %}
+<h2>Distribution runs</h2>
+{% if runs %}<div class="table-wrap"><table><thead><tr><th scope="col">Run</th><th scope="col">Project</th><th scope="col">Record date</th><th scope="col">Eligible</th><th scope="col" class="num">Distributable</th><th scope="col" class="num">Allocated</th><th scope="col">Status</th></tr></thead>
+<tbody>{% for r in runs %}<tr><td class="mono small"><a href="{{ url_for('distributions.run', run_id=r.id) }}">{{ r.run_number }}</a><br>{{ r.title }}</td><td>{{ r.project.name }}</td><td>{{ r.record_date|date }}</td><td>{{ r.eligible_count }}</td><td class="num">{{ r.net_distributable_cents|money }}</td><td class="num">{{ r.distributed_cents|money }}</td><td>{{ badge(r.status) }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}{{ empty("No distributions yet.") }}{% endif %}
+{% endblock %}

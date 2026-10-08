@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, risk_notice with context %}
+{% block title %}{{ _('Register') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><p class="muted">{{ org_full }}</p><h1>Join {{ org_short }}</h1>
+<p class="muted">Required contribution: <strong>{{ setting('contribution_amount_cents')|int|money }}</strong>. You can pay in parts.</p></div></div>
+{% if errors %}<div class="notice danger" role="alert">Please correct the {{ errors|length }} problem{{ 's' if errors|length > 1 }} below.</div>{% endif %}
+{{ risk_notice() }}
+{% if is_demo or sandbox_test_mode %}<p class="notice info"><strong>This is a test site.</strong> Use made-up details and upload any sample PDF/JPG/PNG instead of your real ID document.</p>{% endif %}
+<form method="post" enctype="multipart/form-data" class="card form">
+  {{ csrf() }}
+  <fieldset>
+    <legend>Your details</legend>
+    <div class="form-grid">
+      {{ field("full_name", "Full name", value=form.full_name, required=True, error=errors.full_name, autocomplete="name") }}
+      {{ field("id_number", "ID number / Passport number", value=form.id_number, required=True, error=errors.id_number, help="Letters and numbers only.") }}
+      {{ field("phone", "Phone number", "tel", form.phone, True, help="Used for M-PESA and SMS receipts, e.g. 0712345678.", error=errors.phone, autocomplete="tel") }}
+      {{ field("email", "Email address", "email", form.email, True, error=errors.email, autocomplete="email") }}
+    </div>
+  </fieldset>
+  <fieldset>
+    <legend>Password</legend>
+    <div class="form-grid">
+      {{ field("password", "Password", "password", required=True, help="At least 10 characters, with letters and numbers.", error=errors.password, autocomplete="new-password") }}
+      {{ field("confirm_password", "Confirm password", "password", required=True, autocomplete="new-password") }}
+    </div>
+  </fieldset>
+  <fieldset>
+    <legend>Documents</legend>
+    <div class="form-grid">
+      {{ field("id_document", "Copy of your ID or passport", "file", required=True, help="PDF, JPG or PNG, up to " ~ (config.MAX_FILE_SIZE // (1024*1024)) ~ " MB. Stored privately.", error=errors.id_document, attrs='accept=".pdf,.jpg,.jpeg,.png"') }}
+      {{ field("profile_photo", "Profile photo (optional)", "file", help="JPG or PNG.", error=errors.profile_photo, attrs='accept=".jpg,.jpeg,.png"') }}
+    </div>
+  </fieldset>
+  <div class="field">
+    <div class="check">
+      <input type="checkbox" id="f-agree" name="agree" value="yes" required{% if errors.agree %} aria-invalid="true" aria-describedby="e-agree"{% endif %}>
+      <label for="f-agree">I have read and agree to the <a href="{{ url_for('public.legal', slug='terms') }}">Terms</a>, the <a href="{{ url_for('public.legal', slug='privacy') }}">Privacy Policy</a> the <a href="{{ url_for('public.legal', slug='risk-disclosure') }}">Risk Disclosure</a> and the <a href="{{ url_for('public.legal', slug='contribution-rules') }}">Contribution Rules</a>, and I understand that contributions do not guarantee any return.</label>
+    </div>
+    {% if errors.agree %}<span class="error" id="e-agree" role="alert">{{ errors.agree }}</span>{% endif %}
+  </div>
+  <div><button class="btn" type="submit">Create my account</button></div>
+</form>
+{% endblock %}

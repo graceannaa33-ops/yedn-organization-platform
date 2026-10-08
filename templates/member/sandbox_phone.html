@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Simulated phone{% endblock %}
+{% block content %}
+<p class="notice"><strong>Test mode only.</strong> This page pretends to be your phone so payments can be tried without real money. It does not exist when the site runs in production.</p>
+<div class="phone-sim">
+  <div class="screen">
+    <p><strong>M-PESA (simulated)</strong></p>
+    <p>Pay <strong>{{ charge.amount_cents|money }}</strong> to <strong>{{ org_short }}</strong>, account {{ payment.member.member_number }}?</p>
+    <form method="post" class="form">
+      {{ csrf() }}
+      <div class="field"><label for="f-pin">Enter M-PESA PIN (simulator PIN is 1234)</label>
+      <input id="f-pin" name="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+      <div class="btn-row">
+        <button class="btn" type="submit" name="decision" value="approve">Send</button>
+        <button class="btn danger" type="submit" name="decision" value="decline" formnovalidate>Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

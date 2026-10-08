@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, progress, stat %}
+{% block title %}{{ _('Contributions') }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>My contributions</h1>
+{% if summary.remaining > 0 and member.status == 'active' %}<div class="actions"><a class="btn" href="{{ url_for('payments.new') }}">{{ _('Make a payment') }}</a></div>{% endif %}</div>
+<div class="stats">{{ stat(_('Required contribution'), summary.required|money) }}{{ stat(_('Total paid'), summary.paid|money, tone="blue") }}{{ stat(_('Remaining'), summary.remaining|money, tone="amber") }}{{ stat("Status", _(summary.status)) }}</div>
+<div class="table-wrap"><table>
+  <thead><tr><th scope="col">Contribution</th><th scope="col">Due</th><th scope="col" class="num">Required</th><th scope="col" class="num">Verified paid</th><th scope="col" class="num">Pending</th><th scope="col" class="num">Remaining</th><th scope="col">Status</th></tr></thead>
+  <tbody>{% for r in summary.rows %}
+  <tr><td>{{ r.contribution.period_label }}</td><td>{{ r.contribution.due_date|date if r.contribution.due_date else '—' }}</td><td class="num">{{ r.required|money }}</td><td class="num">{{ r.paid|money }}</td><td class="num">{{ r.pending|money }}</td><td class="num">{{ r.remaining|money }}</td><td>{{ badge(r.status) }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+<div class="card">{{ progress(summary.percent, "Overall") }}</div>
+<p class="small muted">Remaining = required contribution − verified payments. Pending payments are not counted until confirmed.</p>
+{% endblock %}

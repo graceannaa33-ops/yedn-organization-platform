@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "_macros.html" import contribution_example, risk_notice with context %}
+{% block title %}How {{ org_short }} Works{% endblock %}
+{% block content %}
+<h1>How {{ org_short }} works</h1>
+<ol class="steps">{% for title, text in content.HOW_IT_WORKS %}<li><h3>{{ title }}</h3><p>{{ text }}</p></li>{% endfor %}</ol>
+<h2>Member contributions</h2>
+<p>Members contribute according to {{ org_short }}'s approved contribution rules. You may pay in parts; each payment is kept on record separately, and your dashboard shows what you have paid and what remains.</p>
+{{ contribution_example() }}
+{{ risk_notice() }}
+<p><a class="btn" href="{{ url_for('public.membership') }}">Membership details</a></p>
+{% endblock %}

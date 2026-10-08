@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, badge, pagination, empty %}
+{% block title %}Alerts{% endblock %}
+{% block content %}
+<h1>Alerts for review</h1>
+<p class="muted">Automatic checks raise these for a person to look at. An alert is not an accusation — many have innocent explanations.</p>
+<nav class="btn-row" aria-label="Filter alerts">{% for s in ['Open','Reviewed','Dismissed'] %}<a class="btn {{ '' if s == status else 'secondary' }} small" href="{{ url_for('admin.alerts', status=s) }}">{{ s }}</a>{% endfor %}</nav>
+{% if page.items %}{% for f in page.items %}
+<article class="card">
+  <div class="card-head"><h2>{{ f.flag_type|replace('_',' ')|capitalize }}</h2><span>{{ badge(f.severity|title) }} {{ badge(f.status) }}</span></div>
+  <p>{{ f.description }}</p>
+  <p class="small muted">{{ f.created_at|dt }} · {{ f.record_type or '' }} {{ f.record_id or '' }}</p>
+  {% if f.status == 'Open' and can('review_flags') %}
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="flag_id" value="{{ f.id }}">
+    <div class="field"><label for="n-{{ f.id }}">Review note</label><input id="n-{{ f.id }}" name="note" required></div>
+    <div class="btn-row"><button class="btn small" name="decision" value="Reviewed">Mark reviewed</button><button class="btn secondary small" name="decision" value="Dismissed">Dismiss</button></div>
+  </form>
+  {% elif f.review_note %}<p class="small"><strong>{{ f.reviewed_by.full_name if f.reviewed_by }}</strong> ({{ f.reviewed_at|dt }}): {{ f.review_note }}</p>{% endif %}
+</article>
+{% endfor %}{{ pagination(page, 'admin.alerts') }}
+{% else %}{{ empty("No alerts here.") }}{% endif %}
+{% endblock %}

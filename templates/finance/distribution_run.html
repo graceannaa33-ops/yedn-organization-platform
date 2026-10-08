@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge %}
+{% block title %}{{ r.run_number }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ r.title }}</h1>
+<p class="kv-inline"><span class="mono">{{ r.run_number }}</span><span>{{ badge(r.status) }}</span><span>Project: <strong>{{ r.project.name }}</strong></span><span>Record date: <strong>{{ r.record_date|date }}</strong></span></p></div></div>
+<div class="grid grid-2">
+<section class="card">
+  <table class="kv"><tbody>
+    <tr><th scope="row">Net distributable</th><td class="num">{{ r.net_distributable_cents|money }}</td></tr>
+    <tr><th scope="row">Allocated to {{ r.eligible_count }} members</th><td class="num">{{ r.distributed_cents|money }}</td></tr>
+    <tr><th scope="row">Rounding remainder kept</th><td class="num">{{ r.remainder_cents|money }}</td></tr>
+    <tr><th scope="row">Created</th><td>{{ r.created_by.full_name if r.created_by }} · {{ r.created_at|dt }}</td></tr>
+    <tr><th scope="row">Approved</th><td>{% if r.approved_by %}{{ r.approved_by.full_name }} · {{ r.approved_at|dt }}{% else %}—{% endif %}</td></tr>
+  </tbody></table>
+  {% if r.notes %}<p class="small">{{ r.notes }}</p>{% endif %}
+</section>
+<section class="card">
+  <h2>Rules used (snapshot)</h2>
+  <ul class="small"><li>{{ basis.get(rules.basis, rules.basis) }}</li><li>{{ methods.get(rules.method, rules.method) }}</li><li>{{ late.get(rules.late_policy, rules.late_policy) }}{% if rules.deadline %} (deadline {{ rules.deadline }}){% endif %}</li></ul>
+  <div class="btn-row">
+  {% if r.status == 'Pending' and can('approve_distribution') %}<form method="post">{{ csrf() }}<button class="btn" name="action" value="approve">Approve distribution</button></form>{% endif %}
+  {% if r.status == 'Approved' and can('manage_distributions') %}<form method="post">{{ csrf() }}<button class="btn secondary" name="action" value="process">Mark as processing</button></form>{% endif %}
+  </div>
+  {% if r.status in ('Pending','Approved') and can('manage_distributions') %}
+  <details><summary>Cancel this distribution</summary><form method="post" class="form">{{ csrf() }}{{ field("reason", "Reason", required=True) }}<button class="btn danger" name="action" value="cancel">Cancel</button></form></details>{% endif %}
+</section>
+</div>
+<h2>Member distributions</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">Distribution</th><th scope="col">Member</th><th scope="col" class="num">Basis</th><th scope="col" class="num">Amount</th><th scope="col">Status</th><th scope="col">Payment</th><th scope="col">Action</th></tr></thead>
+<tbody>{% for d in r.distributions %}<tr>
+<td class="mono small">{{ d.dist_number }}</td><td>{{ d.member.member_number }}<br><span class="small">{{ d.member.full_name }}</span></td><td class="num">{{ d.basis_cents|money }}</td><td class="num">{{ d.amount_cents|money }}</td><td>{{ badge(d.status) }}{% if d.failure_reason %}<br><span class="small muted">{{ d.failure_reason }}</span>{% endif %}</td>
+<td class="small">{% if d.paid_at %}{{ d.payment_method|upper }} <span class="mono">{{ d.payment_reference }}</span><br>{{ d.paid_at|dt }} by {{ d.payer.full_name if d.payer }}{% else %}—{% endif %}</td>
+<td>{% if can('manage_distributions') %}
+  {% if d.status in ('Approved','Processing','Failed') and r.status in ('Approved','Processing') %}
+  <details><summary>Pay</summary><form method="post" class="form">{{ csrf() }}<input type="hidden" name="dist_id" value="{{ d.id }}">
+    <div class="field"><label for="m-{{ d.id }}">Method</label><select id="m-{{ d.id }}" name="method"><option value="mpesa">M-PESA</option><option value="bank">Bank</option><option value="cash">Cash</option></select></div>
+    <div class="field"><label for="c-{{ d.id }}">From account</label><select id="c-{{ d.id }}" name="cash_account">{% for c in cash %}<option value="{{ c }}">{{ accounts[c][0] }}</option>{% endfor %}</select></div>
+    {{ field("reference", "Payment reference", required=True) }}
+    <button class="btn small" name="action" value="pay">Mark paid</button></form></details>
+  {% endif %}
+  {% if d.status in ('Approved','Processing') %}<details><summary>Failed</summary><form method="post" class="form">{{ csrf() }}<input type="hidden" name="dist_id" value="{{ d.id }}">{{ field("reason", "Reason", required=True) }}<button class="btn secondary small" name="action" value="fail">Mark failed</button></form></details>{% endif %}
+  {% if d.status == 'Paid' %}<details><summary>Reverse</summary><form method="post" class="form">{{ csrf() }}<input type="hidden" name="dist_id" value="{{ d.id }}">{{ field("reason", "Reason", required=True) }}<button class="btn danger small" name="action" value="reverse">Reverse</button></form></details>{% endif %}
+{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

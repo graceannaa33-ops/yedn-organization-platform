@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge, empty %}
+{% block title %}{{ _('Support') }}{% endblock %}
+{% block content %}
+<h1>Support</h1>
+<div class="grid grid-2">
+<section class="card">
+  <h2>My tickets</h2>
+  {% if items %}<div class="table-wrap"><table><thead><tr><th scope="col">Ticket</th><th scope="col">Subject</th><th scope="col">Status</th><th scope="col">Updated</th></tr></thead>
+  <tbody>{% for t in items %}<tr><td class="mono small"><a href="{{ url_for('members.ticket', ticket_id=t.id) }}">{{ t.ticket_number }}</a></td><td>{{ t.subject }}</td><td>{{ badge(t.status) }}</td><td>{{ t.updated_at|date }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty("No tickets.") }}{% endif %}
+</section>
+<section class="card">
+  <h2>Open a ticket</h2>
+  <form method="post" class="form">{{ csrf() }}
+    {{ field("subject", "Subject", value=request.form.subject, required=True) }}
+    <div class="field"><label for="f-category">Category *</label><select id="f-category" name="category" required><option value="">Choose…</option>{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select></div>
+    {{ field("description", "Describe the issue", "textarea", request.form.description, True) }}
+    <button class="btn" type="submit">Submit</button>
+  </form>
+</section>
+</div>
+{% endblock %}

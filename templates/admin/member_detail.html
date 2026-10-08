@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge, stat, progress, empty %}
+{% block title %}{{ m.member_number }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ m.full_name }}</h1>
+<p class="kv-inline"><span class="mono">{{ m.member_number }}</span><span>{{ badge(m.status|title) }}</span><span>Joined {{ m.joined_at|date }}</span></p></div>
+{% if can('record_payment') %}<div class="actions"><a class="btn secondary" href="{{ url_for('finance.manual_payment', member_number=m.member_number) }}">Record bank/cash payment</a></div>{% endif %}</div>
+<div class="stats">{{ stat("Required", summary.required|money) }}{{ stat("Verified paid", summary.paid|money, tone="blue") }}{{ stat("Remaining", summary.remaining|money, tone="amber") }}{{ stat("Status", summary.status) }}</div>
+<div class="grid grid-2">
+  <section class="card">
+    <div class="card-head"><h2>Details</h2>{% if m.profile_photo %}<img class="profile-photo" src="{{ url_for('admin.member_photo', member_id=m.id) }}" alt="Member photo">{% endif %}</div>
+    <table class="kv"><tbody>
+      <tr><th scope="row">Email</th><td>{{ m.email }}</td></tr>
+      <tr><th scope="row">Phone</th><td>{{ m.phone }}</td></tr>
+      <tr><th scope="row">ID / Passport</th><td>{{ m.id_number if can('view_id_documents') else m.id_number|mask_id }}</td></tr>
+      <tr><th scope="row">Terms accepted</th><td>{{ m.terms_accepted_at|dt }}</td></tr>
+      <tr><th scope="row">Last login</th><td>{{ m.user.last_login_at|dt if m.user.last_login_at else 'Never' }}</td></tr>
+    </tbody></table>
+    <h3>ID documents</h3>
+    {% if m.id_documents %}<ul>{% for d in m.id_documents|reverse %}<li>{{ d.uploaded_at|dt }} · {{ d.mime_type }} · {{ (d.size_bytes / 1024)|round|int }} KB {% if d.is_current %}{{ badge('Current') }}{% endif %}
+      {% if can('view_id_documents') %} — <a href="{{ url_for('admin.member_id_document', member_id=m.id, doc_id=d.id) }}">Open (logged)</a>{% endif %}</li>{% endfor %}</ul>
+    {% else %}<p>{{ badge('Missing') }}</p>{% endif %}
+    {% if not can('view_id_documents') %}<p class="small muted">Only Super Admins can open ID documents.</p>{% endif %}
+  </section>
+  {% if can('manage_members') %}
+  <section class="card">
+    <h2>Manage membership</h2>
+    <form method="post" class="form">{{ csrf() }}
+      {{ field("reason", "Reason (required to suspend or exit)") }}
+      <div class="btn-row">
+        {% if m.status == 'pending' %}<button class="btn" name="action" value="admit">Approve membership</button>{% endif %}
+        {% if m.status == 'active' %}<button class="btn danger" name="action" value="suspend">Suspend</button>{% endif %}
+        {% if m.status == 'suspended' %}<button class="btn" name="action" value="reactivate">Reactivate</button>{% endif %}
+        {% if m.status in ('active','suspended') %}<button class="btn secondary" name="action" value="exit">Mark as exited</button>{% endif %}
+      </div>
+    </form>
+    <details><summary>Reset password</summary>
+      <form method="post" class="form">{{ csrf() }}<input type="hidden" name="action" value="reset_password">
+        {{ field("new_password", "New temporary password", "password", required=True, help="Give it to the member privately; ask them to change it.") }}
+        {{ field("reason", "Reason", required=True) }}
+        <button class="btn secondary" type="submit">Reset password</button></form>
+    </details>
+  </section>
+  {% endif %}
+</div>
+<h2>Payments</h2>
+{% if history %}<div class="table-wrap"><table>
+<thead><tr><th scope="col">Date</th><th scope="col" class="num">Amount</th><th scope="col">Method</th><th scope="col">Reference</th><th scope="col">Status</th><th scope="col" class="num">Total paid</th><th scope="col" class="num">Remaining</th></tr></thead>
+<tbody>{% for row in history %}{% set p = row.payment %}<tr><td>{{ p.created_at|dt }}</td><td class="num">{{ p.amount_cents|money }}</td><td>{{ p.method|upper }}</td>
+<td class="mono small">{% if can('view_finance') %}<a href="{{ url_for('finance.payment', payment_id=p.id) }}">{{ p.reference }}</a>{% else %}{{ p.reference }}{% endif %}</td><td>{{ badge(p.status) }}</td><td class="num">{{ row.total_paid|money }}</td><td class="num">{{ row.remaining|money }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}{{ empty("No payments.") }}{% endif %}
+<h2>Distributions</h2>
+{% if dists %}<ul>{% for d in dists %}<li>{{ d.dist_number }} — {{ d.amount_cents|money }} — {{ d.project.name }} {{ badge(d.status) }}</li>{% endfor %}</ul>{% else %}{{ empty("None.") }}{% endif %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}{{ _('Opportunities') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Opportunities</h1>
+<p class="muted">Scholarships, internships, jobs, grants, competitions and training shared by {{ org_short }}.</p></div>
+<form method="get" class="filters" aria-label="Filter opportunities">
+  <div class="field"><label for="f-type">Type</label><select id="f-type" name="type"><option value="">All</option>{% for t in types %}<option{% if t == kind %} selected{% endif %}>{{ t }}</option>{% endfor %}</select></div>
+  <button class="btn secondary" type="submit">Filter</button>
+</form></div>
+{% if current %}
+<div class="grid grid-2">{% for o in current %}
+<article class="card">
+  <div class="card-head"><h2>{{ o.title }}</h2>{{ badge(o.opportunity_type) }}</div>
+  <p class="kv-inline small">{% if o.provider %}<span>From <strong>{{ o.provider }}</strong></span>{% endif %}<span>Deadline <strong>{{ o.deadline|date if o.deadline else 'Open' }}</strong></span>{% if o.members_only %}<span>{{ badge('Members only') }}</span>{% endif %}</p>
+  {{ o.description|paragraphs }}
+  {% if o.eligibility %}<h3>Eligibility</h3>{{ o.eligibility|paragraphs }}{% endif %}
+  {% if o.how_to_apply %}<h3>How to apply</h3>{{ o.how_to_apply|paragraphs }}{% endif %}
+  {% if o.link %}<p><a href="{{ o.link }}" rel="noopener nofollow">Official information →</a></p>{% endif %}
+</article>{% endfor %}</div>
+<p class="small muted">{{ org_short }} shares these opportunities for information. Always confirm details with the provider; {{ org_short }} does not guarantee selection.</p>
+{% else %}
+<p class="notice info">There are no open opportunities listed right now. Please check again soon{% if not current_user %}, or <a href="{{ url_for('auth.register') }}">join {{ org_short }}</a> to see member-only opportunities{% endif %}.</p>
+{% endif %}
+{% if past %}<details><summary>Closed opportunities ({{ past|length }})</summary><ul>{% for o in past %}<li>{{ o.title }} — closed {{ o.deadline|date }}</li>{% endfor %}</ul></details>{% endif %}
+{% endblock %}

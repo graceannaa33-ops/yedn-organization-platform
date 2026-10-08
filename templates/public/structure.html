@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Organization Structure{% endblock %}
+{% block content %}
+<h1>Organization structure</h1>
+<div class="grid grid-2">
+  <ol class="flow" aria-label="Organization structure from membership to partners">
+    {% for title, text in content.STRUCTURE %}<li><strong>{{ title }}</strong><span class="small">{{ text }}</span></li>{% endfor %}
+  </ol>
+  <section class="card">
+    <h2>Leadership</h2>
+    {% if leadership %}{{ leadership|paragraphs }}{% else %}<p class="muted">Official leadership information will be published here once it is confirmed.</p>{% endif %}
+    <p class="small"><a href="{{ url_for('public.governance') }}">How governance works →</a></p>
+  </section>
+</div>
+{% endblock %}

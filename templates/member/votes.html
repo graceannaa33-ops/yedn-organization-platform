@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, empty %}
+{% block title %}{{ _('Voting') }}{% endblock %}
+{% block content %}
+<h1>Voting</h1>
+{% if rows %}
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Proposal</th><th scope="col">Voting period</th><th scope="col">Status</th><th scope="col">Your vote</th></tr></thead>
+<tbody>{% for v, is_open, eligible in rows %}
+<tr><td><a href="{{ url_for('members.vote_detail', vote_id=v.id) }}">{{ v.title }}</a></td><td>{{ v.opens_at|dt }} – {{ v.closes_at|dt }}</td>
+<td>{% if v.status == 'Closed' %}{{ badge(v.result) }}{% elif is_open %}{{ badge('Open') }}{% else %}{{ badge('Scheduled') }}{% endif %}</td>
+<td>{% if voted.get(v.id) %}Voted{% elif not eligible %}<span class="muted">Not eligible</span>{% elif is_open %}<a href="{{ url_for('members.vote_detail', vote_id=v.id) }}">Vote now</a>{% else %}—{% endif %}</td></tr>
+{% endfor %}</tbody></table></div>
+{% else %}{{ empty("No votes yet.") }}{% endif %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, pagination, empty %}
+{% block title %}Ledger{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Financial ledger</h1>{% if can('create_transaction') %}<div class="actions"><a class="btn" href="{{ url_for('finance.new_transaction') }}">New transaction</a></div>{% endif %}</div>
+<form method="get" class="filters">
+  <div class="field"><label for="f-q">Search</label><input id="f-q" type="search" name="q" value="{{ args.get('q','') }}" placeholder="Number, description, reference"></div>
+  <div class="field"><label for="f-type">Type</label><select id="f-type" name="type"><option value="">All</option>{% for k, v in types.items() %}<option value="{{ k }}"{% if args.get('type') == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="f-status">Approval</label><select id="f-status" name="status"><option value="">All</option>{% for s in ['pending','approved','rejected'] %}<option value="{{ s }}"{% if args.get('status') == s %} selected{% endif %}>{{ s|title }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="f-project">Project</label><select id="f-project" name="project"><option value="">All</option>{% for p in projects %}<option value="{{ p.id }}"{% if args.get('project') == p.id|string %} selected{% endif %}>{{ p.name }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="f-start">From</label><input id="f-start" type="date" name="start" value="{{ args.get('start','') }}"></div>
+  <div class="field"><label for="f-end">To</label><input id="f-end" type="date" name="end" value="{{ args.get('end','') }}"></div>
+  <button class="btn secondary" type="submit">Filter</button>
+</form>
+{% if page.items %}
+<div class="table-wrap"><table><thead><tr><th scope="col">Date</th><th scope="col">Transaction</th><th scope="col">Type</th><th scope="col">Description</th><th scope="col">Project</th><th scope="col" class="num">Amount</th><th scope="col">Approval</th><th scope="col">Verification</th><th scope="col">Created by</th></tr></thead>
+<tbody>{% for t in page.items %}<tr>
+<td>{{ t.txn_date|date }}<br><span class="small muted">{{ t.created_at|dt('%H:%M') }}</span></td>
+<td class="mono small"><a href="{{ url_for('finance.transaction', txn_id=t.id) }}">{{ t.txn_number }}</a>{% if t.reference %}<br><span class="muted">{{ t.reference }}</span>{% endif %}</td>
+<td>{{ types.get(t.type, t.type) }}{% if t.type in ('adjustment','other') %} ({{ t.direction }}){% endif %}{% if t.is_reversal %}<br>{{ badge('Reversal') }}{% elif t.reversed_by_txn_id %}<br>{{ badge('Reversed') }}{% endif %}</td>
+<td class="small">{{ t.description }}</td><td class="small">{{ t.project.name if t.project else '' }}</td>
+<td class="num">{{ ('−' if t.is_reversal else '') }}{{ t.amount_cents|money }}</td>
+<td>{{ badge(t.approval_status|title) }}</td><td>{{ badge(t.verification_status|replace('_',' ')|title) }}</td><td class="small">{{ t.created_by.full_name if t.created_by else 'System' }}</td></tr>{% endfor %}</tbody></table></div>
+{{ pagination(page, 'finance.ledger') }}
+{% else %}{{ empty("No transactions match.") }}{% endif %}
+{% endblock %}

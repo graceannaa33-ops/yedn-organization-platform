@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+{% block title %}{{ _('Partners') }}{% endblock %}
+{% block content %}
+<h1>Project partners</h1>
+<p class="statement">{{ org_short }} works to build partnerships with organizations, businesses, professionals, educational institutions, development organizations and other stakeholders that share its goals.</p>
+<p class="small muted">Only confirmed partners are listed here.</p>
+{% if items %}<div class="grid grid-2">{% for p in items %}
+<article class="card"><h2>{{ p.name }}</h2>{{ p.description|paragraphs }}
+{% if p.website %}<p><a href="{{ p.website }}" rel="noopener nofollow">{{ p.website }}</a></p>{% endif %}
+<p class="small muted">Projects: {{ p.projects|selectattr('is_public')|list|length }}</p></article>
+{% endfor %}</div>{% else %}{{ empty("No confirmed partners have been published yet.") }}{% endif %}
+{% endblock %}

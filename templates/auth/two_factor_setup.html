@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field %}
+{% block title %}Set up two-factor authentication{% endblock %}
+{% block content %}
+<section class="card prose">
+  <h1>Set up two-factor authentication</h1>
+  {% if required %}<p class="notice">The organisation requires staff accounts to use two-factor authentication.</p>{% endif %}
+  <ol>
+    <li>Install an authenticator app on your phone (Google Authenticator, Microsoft Authenticator or similar).</li>
+    <li>In the app choose <strong>Add account → Enter a setup key</strong>, use "Time-based", and type this key:
+      <p class="secret">{{ secret }}</p></li>
+    <li>Type the 6-digit code the app shows to finish.</li>
+  </ol>
+  <details><summary>Using a desktop app instead?</summary><p class="small mono">{{ uri }}</p></details>
+  <form method="post" class="form">
+    {{ csrf() }}
+    {{ field("code", "6-digit code", "text", required=True, autocomplete="one-time-code", attrs='inputmode="numeric" maxlength="7"') }}
+    <button class="btn" type="submit">Turn on two-factor authentication</button>
+  </form>
+</section>
+{% endblock %}

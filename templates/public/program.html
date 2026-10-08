@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}{{ p.title }}{% endblock %}
+{% block content %}
+<article class="prose">
+  <p class="muted">{{ org_short }} program</p>
+  <h1>{{ p.title }}</h1>
+  <p>Status: {{ badge(p.status) }}</p>
+  {{ p.description|paragraphs }}
+  {% if p.objectives %}<h2>Objectives</h2>{{ p.objectives|paragraphs }}{% endif %}
+  {% if p.eligibility %}<h2>Eligibility</h2>{{ p.eligibility|paragraphs }}{% endif %}
+  <h2>How to apply</h2>
+  {% if p.application_info %}{{ p.application_info|paragraphs }}{% else %}<p class="muted">Application information will be announced.</p>{% endif %}
+  <p><a href="{{ url_for('public.programs') }}">← All programs</a></p>
+</article>
+{% endblock %}

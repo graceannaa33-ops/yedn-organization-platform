@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field %}
+{% block title %}Record bank / cash payment{% endblock %}
+{% block content %}
+<h1>Record a bank or cash payment</h1>
+<p class="muted">The payment is saved as <strong>Pending</strong>. A second officer must check it against the bank statement and verify it before it counts.</p>
+<form method="post" class="card form">{{ csrf() }}
+  <div class="form-grid">
+    {{ field("member_number", "Member ID", value=form.member_number or request.args.get('member_number',''), required=True, help="e.g. MBR-00012") }}
+    {{ field("amount", "Amount", value=form.amount, required=True) }}
+    <div class="field"><label for="f-method">Method</label><select id="f-method" name="method"><option value="bank">Bank deposit / transfer</option><option value="cash"{% if form.method == 'cash' %} selected{% endif %}>Cash (receipt issued)</option></select></div>
+    {{ field("reference", "Bank slip / receipt number", value=form.reference, required=True, help="Must be unique. Duplicates are refused.") }}
+  </div>
+  {{ field("notes", "Notes", value=form.notes) }}
+  <button class="btn" type="submit">Record as pending</button>
+</form>
+{% endblock %}

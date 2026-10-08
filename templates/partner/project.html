@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge, progress, timeline, project_finance, empty %}
+{% block title %}{{ p.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ p.name }}</h1><p class="kv-inline"><span>{{ badge(p.status) }}</span><span>{{ p.category }}</span><span>{{ p.location }}</span></p></div></div>
+{% if not can_edit %}<p class="notice info">This project is {{ p.status }}. Reporting is closed.</p>{% endif %}
+<div class="grid grid-2">
+  <section class="card">{{ progress(p.progress_percent, "Completion") }}<h2>Finances</h2>{{ project_finance(fin) }}</section>
+  <section class="card">
+    <h2>Milestones</h2>
+    {% if p.milestones %}<div class="table-wrap"><table><thead><tr><th scope="col">Milestone</th><th scope="col">Due</th><th scope="col">Status</th></tr></thead><tbody>
+    {% for m in p.milestones %}<tr><td>{{ m.title }}</td><td>{{ m.due_date|date if m.due_date else '—' }}</td><td>
+      {% if can_edit %}<form method="post" action="{{ url_for('partner.action', project_id=p.id) }}" class="btn-row">{{ csrf() }}<input type="hidden" name="kind" value="milestone"><input type="hidden" name="milestone_id" value="{{ m.id }}">
+      <label class="sr-only" for="ms-{{ m.id }}">Status</label><select id="ms-{{ m.id }}" name="status">{% for s in milestone_statuses %}<option{% if s == m.status %} selected{% endif %}>{{ s }}</option>{% endfor %}</select><button class="btn secondary small" type="submit">Update</button></form>
+      {% else %}{{ badge(m.status) }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}{{ empty("No milestones yet.") }}{% endif %}
+    {% if can_edit %}<details><summary>Add milestone</summary><form method="post" action="{{ url_for('partner.action', project_id=p.id) }}" class="form">{{ csrf() }}<input type="hidden" name="kind" value="milestone">
+      {{ field("title", "Title", required=True) }}{{ field("due_date", "Due date", "date") }}<button class="btn secondary small" type="submit">Add</button></form></details>{% endif %}
+  </section>
+</div>
+
+{% if can_edit %}
+<div class="grid grid-2">
+  <section class="card">
+    <h2>Progress update or challenge</h2>
+    <form method="post" action="{{ url_for('partner.action', project_id=p.id) }}" class="form">{{ csrf() }}<input type="hidden" name="kind" value="update">
+      <div class="field"><label for="f-uk">Type</label><select id="f-uk" name="update_kind"><option value="progress">Progress</option><option value="challenge">Challenge / problem</option><option value="delay">Delay</option></select></div>
+      {{ field("progress_percent", "Completion %", "number", p.progress_percent, attrs='min="0" max="100"') }}
+      {{ field("body", "What happened?", "textarea", required=True) }}
+      <input type="hidden" name="is_public" value="on">
+      <button class="btn" type="submit">Submit update</button></form>
+  </section>
+  <section class="card">
+    <h2>Upload a report, receipt, photo or document</h2>
+    <form method="post" action="{{ url_for('partner.action', project_id=p.id) }}" enctype="multipart/form-data" class="form">{{ csrf() }}<input type="hidden" name="kind" value="document">
+      <div class="field"><label for="f-dk">Type</label><select id="f-dk" name="doc_kind">{% for k, v in doc_kinds.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+      {{ field("title", "Title") }}{{ field("file", "File (PDF/JPG/PNG)", "file", required=True) }}
+      <button class="btn" type="submit">Upload</button></form>
+  </section>
+  <section class="card">
+    <h2>Record an expense</h2>
+    <form method="post" action="{{ url_for('partner.action', project_id=p.id) }}" enctype="multipart/form-data" class="form">{{ csrf() }}<input type="hidden" name="kind" value="expense">
+      {{ field("description", "What was bought / paid", required=True) }}{{ field("category", "Category") }}
+      <div class="form-grid">{{ field("amount", "Amount", required=True) }}{{ field("date", "Date", "date", required=True) }}</div>
+      {{ field("receipt", "Receipt (PDF/JPG/PNG)", "file") }}
+      <button class="btn" type="submit">Submit expense</button></form>
+  </section>
+  <section class="card">
+    <h2>Record revenue</h2>
+    <form method="post" action="{{ url_for('partner.action', project_id=p.id) }}" enctype="multipart/form-data" class="form">{{ csrf() }}<input type="hidden" name="kind" value="revenue">
+      {{ field("description", "Description", required=True) }}{{ field("source", "Source (e.g. sales)") }}
+      <div class="form-grid">{{ field("amount", "Amount", required=True) }}{{ field("date", "Date", "date", required=True) }}</div>
+      {{ field("receipt", "Supporting document", "file") }}
+      <p class="small muted">Revenue must be paid into the organisation's account; finance verifies it against the statement.</p>
+      <button class="btn" type="submit">Submit revenue</button></form>
+  </section>
+</div>
+{% endif %}
+
+<div class="grid grid-2">
+<section class="card"><h2>Expenses</h2>{% if p.expenses %}<ul class="small">{% for e in p.expenses|reverse %}<li>{{ e.expense_date|date }} — {{ e.description }} — {{ e.amount_cents|money }} {{ badge(e.status) }}{% if e.rejection_reason %} <span class="muted">({{ e.rejection_reason }})</span>{% endif %}</li>{% endfor %}</ul>{% else %}{{ empty() }}{% endif %}
+<h2>Revenue</h2>{% if p.revenues %}<ul class="small">{% for r in p.revenues|reverse %}<li>{{ r.revenue_date|date }} — {{ r.description }} — {{ r.amount_cents|money }} {{ badge(r.status) }}{% if r.rejection_reason %} <span class="muted">({{ r.rejection_reason }})</span>{% endif %}</li>{% endfor %}</ul>{% else %}{{ empty() }}{% endif %}</section>
+<section class="card"><h2>Documents</h2>{% if p.documents %}<ul class="small">{% for d in p.documents|reverse %}<li><a href="{{ url_for('community.document', doc_id=d.id) }}">{{ d.title }}</a> ({{ doc_kinds.get(d.kind, d.kind) }}, {{ d.uploaded_at|date }})</li>{% endfor %}</ul>{% else %}{{ empty() }}{% endif %}</section>
+</div>
+<h2>Timeline</h2>
+{{ timeline(p.updates) }}
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, progress, empty, stat, transparency_band, risk_notice with context %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">{{ org_full }}</p>
+    <h1>{{ setting('organization_tagline') }}</h1>
+    <p>{{ org_name }} ({{ org_short }}) connects young people to enterprise development, skills, mentorship, opportunities and responsible financial participation.</p>
+    <div class="btn-row">
+      <a class="btn gold" href="{{ url_for('auth.register') if not current_user else url_for('public.membership') }}">Join {{ org_short }}</a>
+      <a class="btn ghost" href="{{ url_for('public.opportunities') }}">Explore Opportunities</a>
+      <a class="btn ghost" href="{{ url_for('transparency.index') }}">View Transparency</a>
+    </div>
+  </div>
+  <div>
+    <p class="small">How {{ org_short }} helps young people move forward:</p>
+    <ol class="pathway" aria-label="From ideas to impact">{% for step in content.PATHWAY %}<li>{{ step }}</li>{% endfor %}</ol>
+  </div>
+</section>
+
+<h2>{{ org_short }} in numbers</h2>
+<div class="stats">
+  {{ stat("Registered members", stats.members) }}
+  {{ stat("Active projects", stats.active_projects, tone="amber") }}
+  {{ stat("Projects under implementation", stats.under_implementation, tone="amber") }}
+  {{ stat("Completed projects", stats.completed_projects) }}
+  {{ stat("Total verified contributions", stats.contributions|money, tone="blue") }}
+</div>
+<p class="small muted">Every figure is counted from {{ org_short }}'s records when this page loads.</p>
+
+<h2>What we do</h2>
+<div class="tile-grid">
+  {% for title, text in content.WHAT_WE_DO %}<article class="tile{{ ' amber' if loop.index is even }}"><h3>{{ title }}</h3><p>{{ text }}</p></article>{% endfor %}
+</div>
+<p><a href="{{ url_for('public.what_we_do') }}">More about what we do →</a></p>
+
+{% if programs %}
+<h2>Programs</h2>
+<div class="grid grid-3">{% for p in programs %}<article class="card"><div class="card-head"><h3><a href="{{ url_for('public.program', program_id=p.id) }}">{{ p.title }}</a></h3>{{ badge(p.status) }}</div><p class="small">{{ p.description|truncate(160) }}</p></article>{% endfor %}</div>
+<p><a href="{{ url_for('public.programs') }}">All programs →</a></p>
+{% endif %}
+
+<h2>How {{ org_short }} works</h2>
+<ol class="steps">
+  {% for title, text in content.HOW_IT_WORKS[:5] %}<li><h3>{{ title }}</h3><p class="small">{{ text }}</p></li>{% endfor %}
+</ol>
+<p><a href="{{ url_for('public.how_it_works') }}">See all ten steps →</a></p>
+
+<h2>Projects</h2>
+{% if projects %}
+<div class="grid grid-3">
+  {% for p, fin in projects %}
+  <article class="card">
+    <div class="card-head"><h3><a href="{{ url_for('public.project', project_id=p.id) }}">{{ p.name }}</a></h3>{{ badge(p.status) }}</div>
+    <p class="small muted">{{ p.category }}{% if p.location %} · {{ p.location }}{% endif %}</p>
+    {{ progress(p.progress_percent) }}
+    <p class="kv-inline small"><span>Released <strong>{{ fin.released|money }}</strong></span><span>Net result <strong>{{ fin.net|money }}</strong></span></p>
+  </article>
+  {% endfor %}
+</div>
+<p><a href="{{ url_for('public.projects') }}">All projects →</a></p>
+{% else %}{{ empty("No public projects yet.") }}{% endif %}
+
+{{ transparency_band() }}
+
+<h2>Our values</h2>
+<div class="tile-grid">{% for title, text in content.VALUES %}<article class="tile"><h3>{{ title }}</h3><p>{{ text }}</p></article>{% endfor %}</div>
+
+{% if news %}
+<h2>News</h2>
+<div class="grid grid-3">
+  {% for a in news %}<article class="card"><h3>{{ a.title }}</h3><p class="small muted">{{ a.created_at|date }}</p>{{ a.body|paragraphs }}</article>{% endfor %}
+</div>
+{% endif %}
+
+{{ risk_notice() }}
+{% endblock %}

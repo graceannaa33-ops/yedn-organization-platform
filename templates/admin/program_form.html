@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}{{ p.title }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('content.programs') }}">← Programs</a></p>
+<h1>{{ p.title }}</h1>
+<section class="card">{% include "admin/_program_fields.html" %}</section>
+{% if p.is_published %}<p><a href="{{ url_for('public.program', program_id=p.id) }}">View public page →</a></p>{% endif %}
+{% endblock %}

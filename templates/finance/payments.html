@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, pagination, empty %}
+{% block title %}Payments{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Payments</h1>{% if can('record_payment') %}<div class="actions"><a class="btn" href="{{ url_for('finance.manual_payment') }}">Record bank / cash payment</a></div>{% endif %}</div>
+<form method="get" class="filters">
+  <div class="field"><label for="f-q">Search</label><input id="f-q" type="search" name="q" value="{{ args.get('q','') }}" placeholder="Reference, member ID, receipt"></div>
+  <div class="field"><label for="f-status">Status</label><select id="f-status" name="status"><option value="">All</option>{% for s in ['Pending','Successful','Failed','Cancelled','Reversed'] %}<option{% if args.get('status') == s %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="f-method">Method</label><select id="f-method" name="method"><option value="">All</option>{% for s in ['mpesa','sandbox','bank','cash'] %}<option value="{{ s }}"{% if args.get('method') == s %} selected{% endif %}>{{ s|upper }}</option>{% endfor %}</select></div>
+  <button class="btn secondary" type="submit">Filter</button>
+</form>
+{% if page.items %}
+<div class="table-wrap"><table><thead><tr><th scope="col">Date</th><th scope="col">Reference</th><th scope="col">Member</th><th scope="col" class="num">Amount</th><th scope="col">Method</th><th scope="col">Provider ref</th><th scope="col">Status</th></tr></thead>
+<tbody>{% for p in page.items %}<tr><td>{{ p.created_at|dt }}</td><td class="mono small"><a href="{{ url_for('finance.payment', payment_id=p.id) }}">{{ p.reference }}</a></td><td>{{ p.member.member_number }}</td><td class="num">{{ p.amount_cents|money }}</td><td>{{ p.method|upper }}</td><td class="mono small">{{ p.provider_receipt or '—' }}</td><td>{{ badge(p.status) }}</td></tr>{% endfor %}</tbody></table></div>
+{{ pagination(page, 'finance.payments') }}
+{% else %}{{ empty("No payments match.") }}{% endif %}
+{% endblock %}

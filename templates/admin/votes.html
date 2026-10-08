@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge, empty %}
+{% block title %}Voting{% endblock %}
+{% block content %}
+<h1>Voting</h1>
+<div class="grid grid-2">
+<section class="card">
+  {% if items %}<div class="table-wrap"><table><thead><tr><th scope="col">Proposal</th><th scope="col">Closes</th><th scope="col">Status</th></tr></thead>
+  <tbody>{% for v in items %}<tr><td><a href="{{ url_for('community.vote', vote_id=v.id) }}">{{ v.title }}</a></td><td>{{ v.closes_at|dt }}</td><td>{{ badge(v.result or v.status) }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty("No votes yet.") }}{% endif %}
+</section>
+<section class="card">
+  <h2>New proposal vote</h2>
+  <form method="post" class="form">{{ csrf() }}
+    {{ field("title", "Proposal title", required=True) }}
+    {{ field("description", "Description", "textarea", required=True) }}
+    {{ field("budget", "Budget (optional)", value="0") }}
+    {{ field("risks", "Risks", "textarea") }}
+    <div class="field"><label for="f-elig">Eligible voters</label><select id="f-elig" name="eligibility"><option value="fully_paid">Fully paid members</option><option value="active">All active members</option></select></div>
+    <div class="form-grid">{{ field("opens_at", "Opens (local time)", "datetime-local", required=True) }}{{ field("closes_at", "Closes (local time)", "datetime-local", required=True) }}
+    {{ field("quorum_percent", "Quorum (% of eligible voters)", "number", "50", True, attrs='min="0" max="100"') }}{{ field("pass_percent", "Passes if Yes is more than (%)", "number", "50", True, attrs='min="0" max="99"') }}</div>
+    <button class="btn" type="submit">Create vote</button>
+  </form>
+</section>
+</div>
+{% endblock %}

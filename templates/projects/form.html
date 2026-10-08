@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field %}
+{% block title %}{{ 'Edit project' if project else 'New project' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Edit ' ~ project.name if project else 'New project proposal' }}</h1>
+<form method="post" class="card form">{{ csrf() }}
+  {{ field("name", "Project name", value=form.name, required=True) }}
+  {{ field("description", "Description", "textarea", form.description, True) }}
+  <div class="form-grid">
+    <div class="field"><label for="f-category">Category *</label><select id="f-category" name="category" required><option value="">Choose…</option>{% for c in categories %}<option{% if c == form.category %} selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+    {{ field("location", "Location", value=form.location) }}
+    <div class="field"><label for="f-partner">Partner</label><select id="f-partner" name="partner_id"><option value="">— None —</option>{% for p in partners %}<option value="{{ p.id }}"{% if p.id|string == form.partner_id|string %} selected{% endif %}>{{ p.name }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="f-manager">Manager</label><select id="f-manager" name="manager_id"><option value="">— None —</option>{% for u in managers %}<option value="{{ u.id }}"{% if u.id|string == form.manager_id|string %} selected{% endif %}>{{ u.full_name }}</option>{% endfor %}</select></div>
+    {% set locked = project and project.status not in ('Proposed','Under Review','Due Diligence') %}
+    {{ field("requested", "Requested funding", value=form.requested, required=True, help="Locked after approval." if locked else None, attrs='readonly' if locked else '') }}
+    {{ field("budget", "Budget", value=form.budget, required=True, attrs='readonly' if locked else '') }}
+    {{ field("start_date", "Start date", "date", form.start_date) }}
+    {{ field("expected_end_date", "Expected completion date", "date", form.expected_end_date) }}
+  </div>
+  {{ field("risks", "Risks", "textarea", form.risks) }}
+  <div class="check"><input type="checkbox" id="f-pub" name="is_public"{% if form.is_public or not project %} checked{% endif %}><label for="f-pub">Show on public pages once approved</label></div>
+  <div class="btn-row"><button class="btn" type="submit">Save</button>{% if project %}<a class="btn secondary" href="{{ url_for('projects.detail', project_id=project.id) }}">Cancel</a>{% endif %}</div>
+</form>
+{% endblock %}

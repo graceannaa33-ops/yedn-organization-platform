@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge %}
+{% block title %}Complaint status{% endblock %}
+{% block content %}
+<h1>Check a complaint</h1>
+<div class="grid grid-2">
+<section class="card">
+  <form method="post" class="form">
+    {{ csrf() }}
+    {{ field("reference", "Reference number", value=request.form.reference, required=True, help="Starts with CMP-") }}
+    {{ field("email", "Email used for the complaint", "email", request.form.email, True) }}
+    <button class="btn" type="submit">Check</button>
+  </form>
+</section>
+{% if complaint %}
+<section class="card">
+  <h2>{{ complaint.subject }}</h2>
+  <p>Status: {{ badge(complaint.status) }}</p>
+  <p class="small muted">Submitted {{ complaint.created_at|dt }} · last updated {{ complaint.updated_at|dt }}</p>
+  {% if complaint.resolution %}<h3>Resolution</h3>{{ complaint.resolution|paragraphs }}{% endif %}
+  {% set public_responses = complaint.responses|rejectattr('is_internal')|list %}
+  {% if public_responses %}<h3>Responses</h3>{% for r in public_responses %}<div class="small"><strong>{{ r.created_at|dt }}</strong>{{ r.body|paragraphs }}</div>{% endfor %}{% endif %}
+</section>
+{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field %}
+{% block title %}{{ _('Complaints') }}{% endblock %}
+{% block content %}
+<h1>Make a complaint</h1>
+<div class="grid grid-2">
+  <section class="card">
+    <form method="post" class="form">
+      {{ csrf() }}
+      {{ field("name", "Your name", value=form.name, required=True) }}
+      {{ field("email", "Email", "email", form.email, True, help="We use this to reply. It is never published.") }}
+      {{ field("phone", "Phone (optional)", "tel", form.phone) }}
+      <div class="field"><label for="f-category">Category *</label>
+        <select id="f-category" name="category" required><option value="">Choose…</option>{% for c in categories %}<option{% if c == form.category %} selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+      {{ field("subject", "Subject", value=form.subject, required=True) }}
+      {{ field("description", "What happened?", "textarea", form.description, True) }}
+      <div class="honeypot" aria-hidden="true"><label for="f-website">Leave empty</label><input id="f-website" name="website" tabindex="-1" autocomplete="off"></div>
+      <button class="btn" type="submit">Submit complaint</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Our complaints policy</h2>
+    {{ policy|paragraphs }}
+    <p><a class="btn secondary" href="{{ url_for('public.complaint_status') }}">Check a complaint's progress</a></p>
+  </section>
+</div>
+{% endblock %}

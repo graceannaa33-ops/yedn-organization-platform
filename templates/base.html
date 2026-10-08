@@ -1,0 +1,157 @@
+{% from "_macros.html" import navlink, csrf %}<!doctype html>
+<html lang="{{ current_lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% endblock %}{% if self.title() %} · {{ org_short }}{% else %}{{ org_full }}{% endif %}</title>
+  <meta name="description" content="{{ org_full }} — {{ setting('organization_tagline') }}">
+  {% if current_user %}<meta name="robots" content="noindex">{% endif %}
+  {% block head %}{% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+{% if is_demo or sandbox_test_mode %}<div class="demo-banner" role="note">TEST SITE — {% if is_demo %}demo people, projects and amounts are test data. {% endif %}{% if sandbox_test_mode %}Payments are simulated; no real money moves. {% endif %}Please do not upload real ID documents.</div>{% endif %}
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="{{ url_for('public.home') }}" aria-label="{{ org_full }} home">
+      {% if setting('logo') %}<img src="{{ url_for('public.logo') }}" alt="">{% else %}<span class="brand-mark" aria-hidden="true">{{ org_short[:1] }}</span>{% endif %}
+      <span class="brand-text"><span class="brand-short">{{ org_short }}</span><span class="brand-full">{{ org_name }}</span></span>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-toggle-label">Menu</label>
+    <nav aria-label="Main">
+    <ul class="main-nav">
+      {{ navlink('public.about', _('About')) }}
+      {{ navlink('public.what_we_do', _('What We Do')) }}
+      {{ navlink('public.programs', _('Programs')) }}
+      {{ navlink('public.projects', _('Projects')) }}
+      {{ navlink('public.opportunities', _('Opportunities')) }}
+      {{ navlink('public.membership', _('Membership')) }}
+      {{ navlink('transparency.index', _('Transparency')) }}
+      {{ navlink('public.contact', _('Contact')) }}
+      {% if current_user %}
+        {% if current_user.role_name == 'member' %}{{ navlink('members.dashboard', _('Dashboard')) }}
+        {% elif current_user.role_name == 'partner' %}{{ navlink('partner.dashboard', _('Dashboard')) }}
+        {% else %}{{ navlink('admin.dashboard', _('Dashboard')) }}{% endif %}
+        <li><form method="post" action="{{ url_for('auth.logout') }}">{{ csrf() }}<button class="linklike" type="submit">{{ _('Log out') }}</button></form></li>
+      {% else %}
+        {{ navlink('auth.login', _('Log in')) }}
+        {{ navlink('auth.register', _('Join YEDN') if org_short == 'YEDN' else _('Register')) }}
+      {% endif %}
+    </ul>
+    </nav>
+  </div>
+</header>
+
+{% if current_user %}
+<nav class="area-nav" aria-label="Account area">
+  <ul>
+  {% if current_user.role_name == 'member' %}
+    {{ navlink('members.dashboard', _('Dashboard')) }}
+    {{ navlink('members.profile', _('Profile')) }}
+    {{ navlink('members.contributions', _('Contributions')) }}
+    {{ navlink('members.payments', _('Payments')) }}
+    {{ navlink('members.statement', _('Statement')) }}
+    {{ navlink('members.projects', _('Projects')) }}
+    {{ navlink('members.distributions', _('Distributions')) }}
+    {{ navlink('members.notifications', _('Notifications'), unread_count) }}
+    {{ navlink('members.meetings', _('Meetings')) }}
+    {{ navlink('members.votes', _('Voting')) }}
+    {{ navlink('members.reports', _('Reports')) }}
+    {{ navlink('public.opportunities', _('Opportunities')) }}
+    {{ navlink('members.support', _('Support')) }}
+    {{ navlink('auth.account', _('Account Settings')) }}
+  {% elif current_user.role_name == 'partner' %}
+    {{ navlink('partner.dashboard', _('Dashboard')) }}
+    {% for key, label in [('updates','Project Updates'),('milestones','Milestones'),('expenses','Expenses'),('revenue','Revenue'),('reports','Reports'),('documents','Documents')] %}
+    <li><a href="{{ url_for('partner.section', section=key) }}"{% if request.view_args and request.view_args.get('section') == key %} aria-current="page"{% endif %}>{{ _(label) }}</a></li>
+    {% endfor %}
+    {{ navlink('members.notifications', _('Notifications'), unread_count) }}
+    {{ navlink('auth.account', _('Account Settings')) }}
+  {% else %}
+    {{ navlink('admin.dashboard', _('Dashboard')) }}
+    {% if can('view_members') %}{{ navlink('admin.members', 'Members') }}{% endif %}
+    {% if can('view_finance') %}{{ navlink('finance.payments', 'Payments') }}{{ navlink('finance.ledger', 'Ledger') }}{{ navlink('finance.position', 'Financial position') }}{{ navlink('finance.verification', 'Approvals') }}{{ navlink('finance.reconciliation', 'Reconciliation') }}{% endif %}
+    {% if can('view_projects_admin') %}{{ navlink('projects.index', 'Projects') }}{% endif %}
+    {% if can('manage_partners') %}{{ navlink('admin.partners', 'Partners') }}{% endif %}
+    {% if can('view_distributions') %}{{ navlink('distributions.index', 'Distributions') }}{% endif %}
+    {% if can('view_reports') %}{{ navlink('reports.index', 'Reports') }}{% endif %}
+    {% if can('manage_meetings') %}{{ navlink('community.meetings', 'Meetings') }}{% endif %}
+    {% if can('manage_votes') %}{{ navlink('community.votes', 'Voting') }}{% endif %}
+    {% if can('view_support') %}{{ navlink('community.tickets', 'Support') }}{{ navlink('community.complaints', 'Complaints') }}{% endif %}
+    {% if can('manage_announcements') %}{{ navlink('community.announcements', 'Announcements') }}{% endif %}
+    {% if can('manage_content') %}{{ navlink('content.programs', 'Programs') }}{{ navlink('content.opportunities', 'Opportunities') }}{% endif %}
+    {% if can('view_flags') %}{{ navlink('admin.alerts', 'Alerts') }}{% endif %}
+    {% if can('view_audit') %}{{ navlink('admin.audit', 'Audit Logs') }}{% endif %}
+    {% if can('manage_staff') %}{{ navlink('admin.staff', 'Staff & Roles') }}{% endif %}
+    {% if can('manage_settings') %}{{ navlink('admin.settings', 'Settings') }}{% endif %}
+    {{ navlink('members.notifications', 'Notifications', unread_count) }}
+    {{ navlink('auth.account', 'Account') }}
+  {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+<main id="main" tabindex="-1">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <ul class="flashes" role="status">
+    {% for category, message in messages %}<li class="flash {{ category if category in ['success','error','info'] else 'info' }}">{{ message }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <h2>{{ org_full }}</h2>
+      <p class="tagline">“{{ setting('organization_tagline') }}”</p>
+      <p class="small muted">{{ setting('organization_supporting_message') }}</p>
+      {% if setting('contact_email') or setting('contact_phone') or setting('contact_address') %}
+      <p class="small">{% if setting('contact_email') %}{{ setting('contact_email') }}<br>{% endif %}{% if setting('contact_phone') %}{{ setting('contact_phone') }}<br>{% endif %}{% if setting('contact_address') %}{{ setting('contact_address') }}{% endif %}</p>
+      {% endif %}
+      {% if setting('organization_registration') %}<p class="small muted">{{ setting('organization_registration') }}</p>{% endif %}
+    </div>
+    <div>
+      <h2>{{ org_short }}</h2>
+      <ul>
+        <li><a href="{{ url_for('public.about') }}">{{ _('About') }}</a></li>
+        <li><a href="{{ url_for('public.programs') }}">{{ _('Programs') }}</a></li>
+        <li><a href="{{ url_for('public.projects') }}">{{ _('Projects') }}</a></li>
+        <li><a href="{{ url_for('public.opportunities') }}">{{ _('Opportunities') }}</a></li>
+        <li><a href="{{ url_for('public.membership') }}">{{ _('Membership') }}</a></li>
+        <li><a href="{{ url_for('public.governance') }}">Governance</a></li>
+        <li><a href="{{ url_for('public.partners') }}">{{ _('Partners') }}</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Accountability</h2>
+      <ul>
+        <li><a href="{{ url_for('transparency.index') }}">{{ _('Transparency') }}</a></li>
+        <li><a href="{{ url_for('transparency.reports') }}">{{ _('Reports') }}</a></li>
+        <li><a href="{{ url_for('public.legal', slug='risk-disclosure') }}">Risk Disclosure</a></li>
+        <li><a href="{{ url_for('public.legal', slug='contribution-rules') }}">Contribution Rules</a></li>
+        <li><a href="{{ url_for('public.legal', slug='distribution-rules') }}">Distribution Rules</a></li>
+        <li><a href="{{ url_for('public.member_rights') }}">Member Rights</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Help</h2>
+      <ul>
+        <li><a href="{{ url_for('public.legal', slug='terms') }}">Terms</a></li>
+        <li><a href="{{ url_for('public.legal', slug='privacy') }}">Privacy</a></li>
+        <li><a href="{{ url_for('public.legal', slug='refund-policy') }}">Refund Policy</a></li>
+        <li><a href="{{ url_for('public.complaints') }}">{{ _('Complaints') }}</a></li>
+        <li><a href="{{ url_for('public.faq') }}">FAQ</a></li>
+        <li><a href="{{ url_for('public.contact') }}">{{ _('Contact') }}</a></li>
+      </ul>
+      <p class="small">{% for code, name in LANGUAGES.items() %}<a href="?lang={{ code }}"{% if code == current_lang %} aria-current="true"{% endif %}>{{ name }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+    </div>
+  </div>
+  <div class="footer-bottom"><p class="small muted">Participation in {{ org_short }} activities does not guarantee financial returns. Contributions follow {{ org_short }}'s approved rules and are not deposits or guaranteed investments.</p></div>
+</footer>
+</body>
+</html>

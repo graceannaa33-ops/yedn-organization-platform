@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge, empty %}
+{% block title %}Partners{% endblock %}
+{% block content %}
+<h1>Project partners</h1>
+<div class="grid grid-2">
+<section class="card">
+  {% if items %}<div class="table-wrap"><table><thead><tr><th scope="col">Partner</th><th scope="col">Projects</th><th scope="col">Logins</th><th scope="col">Status</th></tr></thead>
+  <tbody>{% for p in items %}<tr><td><a href="{{ url_for('admin.partner', partner_id=p.id) }}">{{ p.name }}</a></td><td>{{ p.projects|length }}</td><td>{{ p.users|length }}</td><td>{{ badge('Active' if p.is_active else 'Suspended') }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty("No partners yet.") }}{% endif %}
+</section>
+<section class="card">
+  <h2>Add a partner</h2>
+  <form method="post" class="form">{{ csrf() }}
+    {{ field("name", "Organisation name", required=True) }}
+    {{ field("description", "Description", "textarea") }}
+    <div class="form-grid">{{ field("contact_person", "Contact person") }}{{ field("contact_email", "Contact email", "email") }}{{ field("contact_phone", "Contact phone", "tel") }}{{ field("website", "Website", "url") }}</div>
+    <div class="check"><input type="checkbox" id="f-pub" name="is_public" checked><label for="f-pub">Show on the public Partners page</label></div>
+    <button class="btn" type="submit">Add partner</button>
+  </form>
+</section>
+</div>
+{% endblock %}

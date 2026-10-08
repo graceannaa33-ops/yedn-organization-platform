@@ -1,0 +1,35 @@
+# --- secrets: NEVER commit these ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# --- local database (SQLite) and Flask instance folder ---
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# --- uploaded private files (ID documents, photos, project files) ---
+uploads/*
+!uploads/.gitkeep
+
+# --- backups and logs ---
+backups/
+*.dump
+*.log
+
+# --- editor / OS clutter ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

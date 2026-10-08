@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stat %}
+{% block title %}Financial position{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Financial position</h1>
+<div class="actions">{% if can('create_transaction') %}<a class="btn" href="{{ url_for('finance.new_transaction') }}">New transaction</a>{% endif %}<a class="btn secondary" href="{{ url_for('finance.ledger') }}">Ledger</a></div></div>
+{% if not s.balanced %}<p class="notice danger"><strong>Ledger out of balance.</strong> Debits do not equal credits.</p>{% else %}<p class="notice info small">Ledger check: total debits equal total credits. Balances below are calculated from posted transactions — they cannot be typed in.</p>{% endif %}
+<div class="stats">
+  {{ stat("Bank", s.bank|money) }}{{ stat("Mobile money", s.mpesa|money) }}{{ stat("Reserves", s.reserves|money, tone="blue") }}
+  {{ stat("Available funds", s.available|money) }}{{ stat("Funds invested", s.invested|money, tone="amber") }}
+  {{ stat("Outstanding obligations", (committed + owed)|money, "approved funding not yet released + distributions owed", "red") }}
+</div>
+<div class="grid grid-2">
+<section class="card">
+  <h2>Calculated balance</h2>
+  <table class="kv"><tbody>
+    <tr><th scope="row">Opening balance</th><td class="num">{{ s.position.opening|money }}</td></tr>
+    {% for label, v in s.position.income %}<tr><th scope="row">+ {{ label }}</th><td class="num">{{ v|money }}</td></tr>{% endfor %}
+    {% for label, v in s.position.outflows %}<tr><th scope="row">− {{ label }}</th><td class="num">{{ v|money }}</td></tr>{% endfor %}
+    <tr><th scope="row">+ Approved adjustments</th><td class="num">{{ s.position.adjustments|money }}</td></tr>
+    <tr class="total"><th scope="row">= Calculated balance (bank + mobile money + reserve)</th><td class="num">{{ s.position.closing|money }}</td></tr>
+  </tbody></table>
+  <h3>Obligations</h3>
+  <table class="kv"><tbody><tr><th scope="row">Approved project funding not yet released</th><td class="num">{{ committed|money }}</td></tr><tr><th scope="row">Approved distributions not yet paid</th><td class="num">{{ owed|money }}</td></tr></tbody></table>
+</section>
+<section class="card">
+  <h2>All accounts</h2>
+  <div class="table-wrap"><table><thead><tr><th scope="col">Account</th><th scope="col">Type</th><th scope="col" class="num">Balance</th></tr></thead>
+  <tbody>{% for code, (label, kind) in accounts.items() %}<tr><td>{{ label }}<br><span class="mono small muted">{{ code }}</span></td><td>{{ kind|title }}</td><td class="num">{{ balances[code]|money }}</td></tr>{% endfor %}</tbody></table></div>
+  <h3>Last reconciliation</h3>
+  <ul class="small">{% for acc, rec in recs.items() %}<li>{{ accounts[acc][0] }}: {% if rec %}{{ rec.statement_date|date }} — difference {{ rec.difference_cents|money }}{% else %}never reconciled{% endif %}</li>{% endfor %}</ul>
+  <p><a href="{{ url_for('finance.reconciliation') }}">Reconcile →</a></p>
+</section>
+</div>
+{% endblock %}

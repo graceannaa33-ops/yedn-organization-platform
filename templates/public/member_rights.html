@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Member Rights &amp; Responsibilities{% endblock %}
+{% block content %}
+<h1>Member rights &amp; responsibilities</h1>
+<div class="grid grid-2">
+  <section class="card"><h2>Your rights</h2><ul>{% for r in content.RIGHTS %}<li>{{ r }}</li>{% endfor %}</ul>
+    <p class="small">Members can see their records any time on the {% if not current_user or current_user.role_name == 'member' %}<a href="{{ url_for('members.dashboard') }}">member dashboard</a>{% else %}member dashboard{% endif %}, raise a <a href="{{ url_for('public.complaints') }}">complaint</a> or open a support ticket.</p></section>
+  <section class="card"><h2>Your responsibilities</h2><ul>{% for r in content.RESPONSIBILITIES %}<li>{{ r }}</li>{% endfor %}</ul>
+    <p class="small">Noticed an error or something suspicious? Open a support ticket or a <a href="{{ url_for('public.complaints') }}">complaint</a> straight away.</p></section>
+</div>
+{% endblock %}

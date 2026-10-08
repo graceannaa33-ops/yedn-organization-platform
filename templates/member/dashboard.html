@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stat, badge, progress, empty %}
+{% block title %}{{ _('Dashboard') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><p class="muted">{{ org_short }} member dashboard</p><h1>Hello, {{ member.full_name }}</h1>
+  <p class="kv-inline"><span>Member ID <strong class="mono">{{ member.member_number }}</strong></span><span>Status {{ badge(member.status|title) }}</span></p></div>
+  <div class="actions">{% if summary.remaining > 0 and member.status == 'active' %}<a class="btn" href="{{ url_for('payments.new') }}">{{ _('Make a payment') }}</a>{% endif %}
+  <a class="btn secondary" href="{{ url_for('members.statement') }}">{{ _('Statement') }}</a></div>
+</div>
+{% if member.status == 'pending' %}<p class="notice">Your membership is waiting for approval. You can pay once it is approved.</p>{% endif %}
+{% if member.status == 'suspended' %}<p class="notice danger">Your membership is suspended. Please contact support.</p>{% endif %}
+
+<div class="stats">
+  {{ stat(_('Required contribution'), summary.required|money) }}
+  {{ stat(_('Total paid'), summary.paid|money, tone="blue") }}
+  {{ stat(_('Remaining'), summary.remaining|money, tone="amber" if summary.remaining else "") }}
+  {{ stat("Payment status", _(summary.status), tone="" if summary.status == 'Fully Paid' else "amber") }}
+</div>
+<div class="card">{{ progress(summary.percent, "Contribution paid") }}</div>
+
+<div class="grid grid-2" >
+  <section class="card">
+    <div class="card-head"><h2>Recent payments</h2><a href="{{ url_for('members.payments') }}">All payments →</a></div>
+    {% if history %}
+    <div class="table-wrap"><table>
+      <thead><tr><th scope="col">Date</th><th scope="col" class="num">Amount</th><th scope="col">Status</th><th scope="col">Reference</th></tr></thead>
+      <tbody>{% for row in history %}{% set p = row.payment %}
+      <tr><td>{{ p.created_at|dt }}</td><td class="num">{{ p.amount_cents|money }}</td><td>{{ badge(p.status) }}</td><td class="mono small"><a href="{{ url_for('payments.status', reference=p.reference) }}">{{ p.reference }}</a></td></tr>
+      {% endfor %}</tbody></table></div>
+    {% else %}{{ empty("No payments yet.") }}{% endif %}
+  </section>
+  <section class="card">
+    <h2>My details</h2>
+    <table class="kv"><tbody>
+      <tr><th scope="row">Full name</th><td>{{ member.full_name }}</td></tr>
+      <tr><th scope="row">ID number</th><td>{{ member.id_number }}</td></tr>
+      <tr><th scope="row">Phone</th><td>{{ member.phone }}</td></tr>
+      <tr><th scope="row">Email</th><td>{{ member.email }}</td></tr>
+      <tr><th scope="row">ID document</th><td>{% if member.current_id_document %}{{ badge('Uploaded') }} {{ member.current_id_document.uploaded_at|date }}{% else %}{{ badge('Missing') }} <a href="{{ url_for('members.profile') }}">Upload</a>{% endif %}</td></tr>
+    </tbody></table>
+    <p><a href="{{ url_for('members.profile') }}">Update profile →</a></p>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Distributions</h2><a href="{{ url_for('members.distributions') }}">All →</a></div>
+    {% if distributions %}<ul>{% for d in distributions %}<li>{{ d.amount_cents|money }} — {{ d.project.name }} {{ badge(d.status) }}{% if d.paid_at %} <span class="small muted">paid {{ d.paid_at|date }}</span>{% endif %}</li>{% endfor %}</ul>
+    {% else %}{{ empty("No distributions yet. Distributions are not guaranteed.") }}{% endif %}
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>{{ _('Notifications') }}</h2><a href="{{ url_for('members.notifications') }}">All →</a></div>
+    {% if notifications %}<ul>{% for n in notifications %}<li><strong>{{ n.title }}</strong> <span class="small muted">{{ n.created_at|dt }}</span><br><span class="small">{{ n.body }}</span></li>{% endfor %}</ul>
+    {% else %}{{ empty() }}{% endif %}
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>Projects</h2><a href="{{ url_for('members.projects') }}">All →</a></div>
+    {% if projects %}<ul>{% for p in projects %}<li>{{ p.name }} {{ badge(p.status) }} <span class="small muted">{{ p.progress_percent }}%</span></li>{% endfor %}</ul>{% else %}{{ empty() }}{% endif %}
+  </section>
+  <section class="card">
+    <h2>Announcements</h2>
+    {% if announcements %}{% for a in announcements %}<h3>{{ a.title }}</h3><p class="small muted">{{ a.created_at|date }}</p>{{ a.body|paragraphs }}{% endfor %}{% else %}{{ empty() }}{% endif %}
+    {% if meetings %}<h3>Upcoming meetings</h3><ul>{% for m in meetings %}<li>{{ m.title }} — {{ m.meeting_at|dt }}</li>{% endfor %}</ul>{% endif %}
+  </section>
+</div>
+<section class="card" >
+  <h2>{{ org_full }}</h2>
+  <p class="small"><em>{{ setting('organization_tagline') }}</em>{% if setting('contact_email') %} · Contact: {{ setting('contact_email') }}{% endif %}{% if setting('contact_phone') %} · {{ setting('contact_phone') }}{% endif %}</p>
+  <p class="small"><a href="{{ url_for('members.reports') }}">Reports</a> · <a href="{{ url_for('transparency.index') }}">Transparency</a> · <a href="{{ url_for('public.legal', slug='contribution-rules') }}">Contribution rules</a> · <a href="{{ url_for('public.legal', slug='distribution-rules') }}">Distribution rules</a></p>
+</section>
+{% endblock %}

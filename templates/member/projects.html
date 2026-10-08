@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, progress, project_finance, empty %}
+{% block title %}{{ _('Projects') }}{% endblock %}
+{% block content %}
+<h1>Projects</h1>
+{% if items %}
+{% for p, fin in items %}
+<details{% if loop.first %} open{% endif %}>
+  <summary>{{ p.name }} — {{ p.status }} ({{ p.progress_percent }}%)</summary>
+  <div class="grid grid-2">
+    <div>{{ p.description|paragraphs }}{{ progress(p.progress_percent) }}
+      {% if p.is_public %}<p><a href="{{ url_for('public.project', project_id=p.id) }}">Full project page and timeline →</a></p>{% endif %}</div>
+    <div>{{ project_finance(fin) }}</div>
+  </div>
+</details>
+{% endfor %}
+{% else %}{{ empty("No projects yet.") }}{% endif %}
+{% endblock %}

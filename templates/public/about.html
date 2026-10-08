@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ _('About') }}{% endblock %}
+{% block content %}
+<div class="prose">
+  <p class="muted">About</p>
+  <h1>{{ org_full }}</h1>
+  <p class="statement">“{{ setting('organization_tagline') }}”</p>
+  {{ description|paragraphs }}
+  <ol class="pathway" aria-label="From ideas to impact">{% for step in content.PATHWAY %}<li>{{ step }}</li>{% endfor %}</ol>
+</div>
+<div class="grid grid-2">
+  <section class="card"><h2>Vision</h2><p class="statement">{{ vision }}</p></section>
+  <section class="card"><h2>Mission</h2><p class="statement">{{ mission }}</p></section>
+</div>
+<h2>Core objectives</h2>
+<ol class="card">{% for o in content.OBJECTIVES %}<li>{{ o }}</li>{% endfor %}</ol>
+<h2>Our values</h2>
+<div class="tile-grid">{% for title, text in content.VALUES %}<article class="tile"><h3>{{ title }}</h3><p>{{ text }}</p></article>{% endfor %}</div>
+<div class="grid grid-2">
+  <section class="card">
+    <h2>How {{ org_short }} began</h2>
+    {{ founding|paragraphs }}
+    {% if university %}<h3>Institutional relationships</h3>{{ university|paragraphs }}{% endif %}
+  </section>
+  {% if founding_team %}<section class="card"><h2>Founding team</h2>{{ founding_team|paragraphs }}</section>{% endif %}
+  <section class="card">
+    <h2>Learn more</h2>
+    <ul>
+      <li><a href="{{ url_for('public.what_we_do') }}">What we do</a></li>
+      <li><a href="{{ url_for('public.programs') }}">Programs</a></li>
+      <li><a href="{{ url_for('public.structure') }}">Organization structure</a></li>
+      <li><a href="{{ url_for('public.governance') }}">Governance</a></li>
+      <li><a href="{{ url_for('public.membership') }}">Membership and contributions</a></li>
+      <li><a href="{{ url_for('transparency.index') }}">Transparency Center</a></li>
+    </ul>
+  </section>
+</div>
+<p class="notice info small">{{ fill(content.STATUS_STATEMENT) }}</p>
+{% endblock %}

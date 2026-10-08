@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge %}
+{% block title %}Staff & roles{% endblock %}
+{% block content %}
+<h1>Staff and roles</h1>
+<div class="grid grid-2">
+<section class="card">
+  <h2>Staff accounts</h2>
+  <div class="table-wrap"><table><thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">2FA</th><th scope="col">Status</th><th scope="col">Change</th></tr></thead>
+  <tbody>{% for u in users %}<tr><td>{{ u.full_name }}<br><span class="small muted">{{ u.email }}</span></td><td>{{ ROLE_LABELS[u.role_name] }}</td><td>{{ 'On' if u.totp_enabled else 'Off' }}</td><td>{{ badge('Active' if u.is_active else 'Suspended') }}</td>
+  <td>{% if u.id != current_user.id %}
+    <form method="post" class="form">{{ csrf() }}<input type="hidden" name="user_id" value="{{ u.id }}">
+      <label class="sr-only" for="role-{{ u.id }}">New role</label>
+      <select id="role-{{ u.id }}" name="role">{% for r in roles %}<option value="{{ r }}"{% if r == u.role_name %} selected{% endif %}>{{ ROLE_LABELS[r] }}</option>{% endfor %}</select>
+      <div class="btn-row"><button class="btn secondary small" name="action" value="role">Change role</button><button class="btn secondary small" name="action" value="toggle">{{ 'Disable' if u.is_active else 'Enable' }}</button></div>
+    </form>{% else %}<span class="muted small">You</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+</section>
+<section class="card">
+  <h2>Add staff</h2>
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="action" value="create">
+    {{ field("full_name", "Full name", required=True) }}{{ field("email", "Email", "email", required=True) }}
+    <div class="field"><label for="f-role">Role</label><select id="f-role" name="role">{% for r in roles %}<option value="{{ r }}">{{ ROLE_LABELS[r] }}</option>{% endfor %}</select></div>
+    {{ field("password", "Temporary password", "password", required=True) }}
+    <button class="btn" type="submit">Create</button></form>
+</section>
+</div>
+<h2>What each role can do</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">Permission</th>{% for r in ['super_admin','finance_officer','project_manager','auditor'] %}<th scope="col">{{ ROLE_LABELS[r] }}</th>{% endfor %}</tr></thead>
+<tbody>{% for perm, rs in matrix %}<tr><td>{{ perm|replace('_',' ')|capitalize }}</td>{% for r in ['super_admin','finance_officer','project_manager','auditor'] %}<td>{{ '✓' if r in rs else '' }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+<p class="small muted">Project Partners have a separate portal and only see their assigned projects. Auditors are read-only.</p>
+{% endblock %}

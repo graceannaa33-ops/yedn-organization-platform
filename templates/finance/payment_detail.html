@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge %}
+{% block title %}{{ p.reference }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Payment <span class="mono">{{ p.reference }}</span></h1><p>{{ badge(p.status) }}</p></div></div>
+<div class="grid grid-2">
+<section class="card"><table class="kv"><tbody>
+  <tr><th scope="row">Member</th><td>{% if can('view_members') %}<a href="{{ url_for('admin.member', member_id=p.member.id) }}">{{ p.member.member_number }}</a>{% else %}{{ p.member.member_number }}{% endif %} — {{ p.member.full_name }}</td></tr>
+  <tr><th scope="row">Contribution</th><td>{{ p.contribution.period_label }}</td></tr>
+  <tr><th scope="row">Amount</th><td class="num">{{ p.amount_cents|money }}</td></tr>
+  <tr><th scope="row">Method / provider</th><td>{{ p.method|upper }}{% if p.provider %} / {{ p.provider }}{% endif %}</td></tr>
+  <tr><th scope="row">Phone</th><td>{{ p.phone or '—' }}</td></tr>
+  <tr><th scope="row">Provider checkout ID</th><td class="mono small">{{ p.provider_checkout_id or '—' }}</td></tr>
+  <tr><th scope="row">Provider reference</th><td class="mono">{{ p.provider_receipt or '—' }}</td></tr>
+  <tr><th scope="row">Provider message</th><td class="small">{{ p.provider_result_desc or '—' }}</td></tr>
+  <tr><th scope="row">Created</th><td>{{ p.created_at|dt }} by {{ p.initiated_by.full_name if p.initiated_by else 'system' }}</td></tr>
+  <tr><th scope="row">Verified</th><td>{{ p.verified_at|dt if p.verified_at else '—' }}{% if p.verified_by %} by {{ p.verified_by.full_name }}{% elif p.verified_at %} (provider confirmed){% endif %}</td></tr>
+  {% if p.transaction %}<tr><th scope="row">Ledger</th><td><a href="{{ url_for('finance.transaction', txn_id=p.transaction.id) }}">{{ p.transaction.txn_number }}</a></td></tr>{% endif %}
+  {% if p.reversal_reason %}<tr><th scope="row">Reversed</th><td>{{ p.reversed_at|dt }} — {{ p.reversal_reason }}</td></tr>{% endif %}
+  {% if p.notes %}<tr><th scope="row">Notes</th><td>{{ p.notes }}</td></tr>{% endif %}
+</tbody></table></section>
+<section class="card">
+  <h2>Actions</h2>
+  {% if p.status == 'Pending' and p.method in ('bank','cash') and can('verify_payment') %}
+    <form method="post" class="form">{{ csrf() }}<p>Check the {{ p.method }} reference <strong class="mono">{{ p.provider_receipt }}</strong> on the statement first.</p><button class="btn" name="action" value="verify">Verify and post</button></form>
+    <form method="post" class="form">{{ csrf() }}{{ field("reason", "Reason for rejecting", required=True) }}<button class="btn danger" name="action" value="reject">Reject</button></form>
+  {% elif p.status == 'Pending' and can('verify_payment') %}
+    <form method="post">{{ csrf() }}<button class="btn secondary" name="action" value="recheck">Ask the provider for the status</button></form>
+  {% elif p.status == 'Successful' and can('reverse_payment') %}
+    <details><summary>Reverse payment</summary><form method="post" class="form">{{ csrf() }}{{ field("reason", "Reason", required=True) }}<button class="btn danger" name="action" value="reverse">Reverse</button>
+    <p class="small muted">The payment stays on record as Reversed and a correcting ledger entry is posted. The member is notified.</p></form></details>
+  {% else %}<p class="muted">No actions available.</p>{% endif %}
+</section>
+</div>
+{% endblock %}

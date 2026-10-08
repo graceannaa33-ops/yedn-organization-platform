@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}FAQ{% endblock %}
+{% block content %}
+<div class="prose">
+<h1>Frequently asked questions</h1>
+<details><summary>How much must I contribute?</summary><p>The required contribution is {{ setting('contribution_amount_cents')|int|money }}. You may pay in parts; your dashboard shows what remains.</p></details>
+<details><summary>When does my payment count?</summary><p>Only after our server confirms it directly with M-PESA or the bank. Until then it shows as <em>Pending</em>. A screenshot or browser message is not enough.</p></details>
+<details><summary>What if I paid twice by mistake?</summary><p>The system blocks duplicate payment references. If money left your account twice, open a support ticket with both references and the finance team will review it under the refund policy.</p></details>
+<details><summary>Will I earn a profit?</summary><p>Not necessarily. Projects can lose money. Distributions happen only from verified net results and only under the documented <a href="{{ url_for('public.legal', slug='distribution-rules') }}">distribution rules</a>.</p></details>
+<details><summary>Who can see my ID document?</summary><p>Only authorised administrators. It is stored privately and every viewing is recorded in the audit log. It is never shown on public pages.</p></details>
+<details><summary>Are the bank balances live?</summary><p>No. They are organisation-reported and reconciled against bank and M-PESA statements; the Transparency page shows when they were last reconciled.</p></details>
+<details><summary>Is the organisation licensed?</summary><p>This website does not claim any licence or regulatory approval. Ask the organisation directly for its registration details.</p></details>
+<details><summary>How do I complain?</summary><p>Use the <a href="{{ url_for('public.complaints') }}">Complaints page</a>. You get a reference number to track progress.</p></details>
+</div>
+{% endblock %}

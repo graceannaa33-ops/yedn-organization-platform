@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import contribution_example with context %}
+{% block title %}{{ _('Membership') }}{% endblock %}
+{% block content %}
+<h1>{{ org_short }} membership</h1>
+<p class="statement">Join a network of young people building skills, enterprises and opportunities together.</p>
+<div class="grid grid-2">
+  <section class="card">
+    <h2>Joining</h2>
+    <ol>
+      <li>Create an account with your full name, ID or passport number, phone number and email.</li>
+      <li>Upload a copy of your ID document (PDF, JPG or PNG). It is stored privately.</li>
+      <li>Read and accept the Terms, Privacy Policy and Risk Disclosure.</li>
+      <li>You receive a {{ org_short }} member ID and your own dashboard.</li>
+    </ol>
+    {% if not current_user %}<p><a class="btn" href="{{ url_for('auth.register') }}">Join {{ org_short }}</a></p>{% endif %}
+  </section>
+  <section class="card">
+    <h2>Your rights and responsibilities</h2>
+    <p>Members can see their contribution records, payment history and statements, raise complaints, contact support and take part in applicable meetings and votes.</p>
+    <p><a href="{{ url_for('public.member_rights') }}">Member Rights &amp; Responsibilities →</a></p>
+  </section>
+</div>
+<h2>How contributions work</h2>
+{{ contribution_example() }}
+<section class="card" id="risk">
+  <h2>Read before you contribute</h2>
+  {{ risk|paragraphs }}
+</section>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Complaint received{% endblock %}
+{% block content %}
+<section class="card prose">
+  <h1>Thank you — we have your complaint</h1>
+  <p>Your reference number is <strong class="mono">{{ complaint.complaint_number }}</strong>. Keep it safe.</p>
+  <p>You can check progress at any time with this reference and your email address.</p>
+  <p><a class="btn" href="{{ url_for('public.complaint_status') }}">Check progress</a></p>
+</section>
+{% endblock %}

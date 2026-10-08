@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Governance{% endblock %}
+{% block content %}
+<div class="prose">
+<h1>Governance</h1>
+<p>How {{ org_short }} makes decisions, controls money and stays accountable to members.</p>
+<h2>Decision-making</h2>
+<p>Leadership sets direction and approves policies. Important decisions are recorded in meeting minutes, and members can take part through meetings and votes.</p>
+<h2>Financial controls</h2>
+<ul>
+  <li>Every contribution, project payment, expense, revenue item and distribution is recorded in a double-entry ledger.</li>
+  <li>Balances are calculated from recorded transactions and cannot be typed in by hand.</li>
+  <li>Money movements need approval by a second officer (two-person rule).</li>
+  <li>Payments count only after they are verified with M-PESA or the bank.</li>
+  <li>Mistakes are corrected with reversal entries; financial records are never deleted.</li>
+  <li>Bank and M-PESA balances are reconciled against statements regularly.</li>
+</ul>
+<h2>Project approval</h2>
+<p>Every project goes through review, financial review, risk assessment and approval before any money is released. Funding depends on approval and available funds; not every project is funded.</p>
+<h2>Member participation</h2>
+<p>Members can see their own records, attend meetings, vote where the rules allow, raise complaints and contact support.</p>
+<h2>Meetings</h2>
+<p>Meetings are announced on the member dashboard with an agenda. Attendance, minutes, decisions and follow-up actions are recorded.</p>
+<h2>Voting</h2>
+<p>Eligible members vote once per proposal. Votes are secret: only totals are shown. Results depend on the quorum and pass mark set for each vote.</p>
+<h2 id="audit">Audit</h2>
+<ul>
+  <li>An auditor role has read-only access to financial records, reports and the audit log.</li>
+  <li>Every important administrative action is written to an audit log (who, what, when, old and new values, reason). Entries cannot be changed or deleted.</li>
+  <li>Automatic checks raise alerts for human review — for example duplicate payment references or unusual activity.</li>
+  <li>Reconciliation and audit reports can be produced from the ledger at any time.</li>
+</ul>
+<h2>Complaints</h2>
+<p>Anyone can raise a <a href="{{ url_for('public.complaints') }}">complaint</a> and track it with a reference number.</p>
+<h2>Conflicts of interest</h2>
+<ul>
+  <li>Officers cannot approve transactions, payments or distributions they entered themselves.</li>
+  <li>Partners can report expenses and revenue but cannot verify them or approve their own funding.</li>
+  <li>A person who both proposes and manages a project cannot approve it.</li>
+  <li>Anyone with a personal interest in a decision should declare it and step aside from that decision.</li>
+</ul>
+<h2>Transparency</h2>
+<p>Summary figures, project results and published reports are available on the <a href="{{ url_for('transparency.index') }}">Transparency Center</a>, without any private member information.</p>
+{% if leadership %}<h2>Leadership</h2>{{ leadership|paragraphs }}{% endif %}
+<p><a href="{{ url_for('public.structure') }}">Organization structure →</a></p>
+</div>
+{% endblock %}

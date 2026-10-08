@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, progress, empty %}
+{% block title %}{{ _('Projects') }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Projects</h1>
+<form method="get" class="filters" aria-label="Filter projects">
+  <div class="field"><label for="f-status">Status</label>
+  <select id="f-status" name="status"><option value="">All</option>{% for s in statuses %}<option{% if s == status %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+  <button class="btn secondary" type="submit">Filter</button>
+</form></div>
+{% if items %}
+<div class="grid grid-2">
+{% for p, fin in items %}
+  <article class="card">
+    <div class="card-head"><h2><a href="{{ url_for('public.project', project_id=p.id) }}">{{ p.name }}</a></h2>{{ badge(p.status) }}</div>
+    <p class="small muted">{{ p.category }}{% if p.location %} · {{ p.location }}{% endif %}{% if p.partner %} · Partner: {{ p.partner.name }}{% endif %}</p>
+    <p>{{ p.description|truncate(180) }}</p>
+    {{ progress(p.progress_percent) }}
+    <p class="kv-inline small"><span>Approved <strong>{{ fin.approved|money }}</strong></span><span>Released <strong>{{ fin.released|money }}</strong></span>
+    <span>Revenue <strong>{{ fin.revenue|money }}</strong></span><span>Expenses <strong>{{ fin.expenses|money }}</strong></span><span>Net <strong>{{ fin.net|money }}</strong></span></p>
+  </article>
+{% endfor %}
+</div>
+{% else %}{{ empty("No projects match.") }}{% endif %}
+{% endblock %}

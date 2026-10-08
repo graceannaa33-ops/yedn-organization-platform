@@ -1,0 +1,16 @@
+{% from "_macros.html" import csrf, field %}
+<form method="post" class="form">{{ csrf() }}
+  {{ field("title", "Title", value=o.title if o else '', required=True) }}
+  <div class="form-grid">
+    <div class="field"><label for="f-type">Type</label><select id="f-type" name="opportunity_type">{% for t in types %}<option{% if o and o.opportunity_type == t %} selected{% endif %}>{{ t }}</option>{% endfor %}</select></div>
+    {{ field("provider", "Offered by", value=o.provider if o else '') }}
+    {{ field("deadline", "Deadline", "date", o.deadline.isoformat() if o and o.deadline else '') }}
+    {{ field("link", "Official link (https://…)", "url", o.link if o else '') }}
+  </div>
+  {{ field("description", "Description", "textarea", o.description if o else '', True) }}
+  {{ field("eligibility", "Eligibility", "textarea", o.eligibility if o else '') }}
+  {{ field("how_to_apply", "How to apply", "textarea", o.how_to_apply if o else '') }}
+  <div class="check"><input type="checkbox" id="f-mo" name="members_only"{% if o and o.members_only %} checked{% endif %}><label for="f-mo">Members only (hidden from visitors who are not logged in)</label></div>
+  <div class="check"><input type="checkbox" id="f-pub" name="is_published"{% if o and o.is_published %} checked{% endif %}><label for="f-pub">Published</label></div>
+  <button class="btn" type="submit">Save opportunity</button>
+</form>

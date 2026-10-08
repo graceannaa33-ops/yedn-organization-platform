@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge %}
+{% block title %}{{ c.subject }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ c.subject }}</h1>
+<p class="kv-inline"><span class="mono">{{ c.ticket_number if kind == 'ticket' else c.complaint_number }}</span><span>{{ c.category }}</span><span>{{ badge(c.status) }}</span><span>Opened {{ c.created_at|dt }}</span></p></div></div>
+<div class="grid grid-2">
+<section class="card">
+  <h2>From {{ c.user.full_name if kind == 'ticket' else c.name }}</h2>
+  {% if kind == 'complaint' %}<p class="small muted">{{ c.email }}{% if c.phone %} · {{ c.phone }}{% endif %}</p>{% endif %}
+  {{ c.description|paragraphs }}
+  {% for r in c.responses %}<hr><p class="small muted">{{ r.author.full_name if r.author else 'System' }} · {{ r.created_at|dt }}{% if r.is_internal %} · <span class="badge pending">Internal note</span>{% endif %}</p>{{ r.body|paragraphs }}{% endfor %}
+  {% if c.resolution %}<h3>Resolution</h3>{{ c.resolution|paragraphs }}{% endif %}
+</section>
+{% if can('manage_support') %}
+<section class="card">
+  <h2>Respond</h2>
+  <form method="post" class="form">{{ csrf() }}
+    <div class="field"><label for="f-assign">Assigned to</label><select id="f-assign" name="assigned_to_id"><option value="">— Unassigned —</option>{% for u in staff %}<option value="{{ u.id }}"{% if u.id == c.assigned_to_id %} selected{% endif %}>{{ u.full_name }} ({{ ROLE_LABELS[u.role_name] }})</option>{% endfor %}</select></div>
+    <div class="field"><label for="f-status">Status</label><select id="f-status" name="status">{% for s in statuses %}<option{% if s == c.status %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+    {{ field("body", "Response", "textarea") }}
+    <div class="check"><input type="checkbox" id="f-internal" name="internal"><label for="f-internal">Internal note (not shown to the {{ 'member' if kind == 'ticket' else 'complainant' }})</label></div>
+    {{ field("resolution", "Resolution (when resolving)", "textarea", c.resolution) }}
+    <button class="btn" type="submit">Save</button>
+  </form>
+</section>
+{% endif %}
+</div>
+{% endblock %}

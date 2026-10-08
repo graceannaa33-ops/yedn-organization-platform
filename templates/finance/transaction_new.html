@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field %}
+{% block title %}New transaction{% endblock %}
+{% block content %}
+<h1>New transaction</h1>
+<p class="muted">Contributions, project funding, project expenses/revenue and distributions are created by their own workflows. Use this form for everything else. A different officer must approve it before it is posted.</p>
+<form method="post" class="card form">{{ csrf() }}
+  <div class="form-grid">
+    <div class="field"><label for="f-type">Type *</label><select id="f-type" name="type" required>{% for k, v in types.items() %}<option value="{{ k }}"{% if form.type == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+    {{ field("amount", "Amount", value=form.amount, required=True) }}
+    {{ field("txn_date", "Date", "date", form.txn_date or today.isoformat(), True) }}
+    <div class="field"><label for="f-cash">Account</label><select id="f-cash" name="cash_account"><option value="CASH_BANK">Bank account</option><option value="CASH_MPESA"{% if form.cash_account == 'CASH_MPESA' %} selected{% endif %}>Mobile money (M-PESA)</option></select>
+      <span class="help">For transfers: the account money leaves. For reserves: the account money moves from/to.</span></div>
+    <div class="field"><label for="f-dir">Direction (adjustments and "other" only)</label><select id="f-dir" name="direction"><option value="in">Money in</option><option value="out"{% if form.direction == 'out' %} selected{% endif %}>Money out</option></select></div>
+    {{ field("reference", "Reference (receipt, statement line)", value=form.reference) }}
+    {{ field("category", "Category", value=form.category) }}
+    <div class="field"><label for="f-project">Project (optional)</label><select id="f-project" name="project_id"><option value="">—</option>{% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select></div>
+    {{ field("member_number", "Member ID (refunds)", value=form.member_number, help="e.g. MBR-00012") }}
+  </div>
+  {{ field("description", "Description", value=form.description, required=True) }}
+  {{ field("evidence", "Evidence note", value=form.evidence, help="What supports this entry (receipt number, invoice, minute).") }}
+  <button class="btn" type="submit">Save for approval</button>
+</form>
+{% endblock %}

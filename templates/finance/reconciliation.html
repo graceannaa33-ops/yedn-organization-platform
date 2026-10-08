@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, empty %}
+{% block title %}Reconciliation{% endblock %}
+{% block content %}
+<h1>Reconciliation</h1>
+<p class="muted">Compare the bank or M-PESA statement with the ledger. Differences must be investigated and corrected with approved adjustments — never by editing balances.</p>
+<div class="grid grid-2">
+{% if can('reconcile') %}
+<section class="card">
+  <h2>Record a reconciliation</h2>
+  <form method="post" class="form">{{ csrf() }}
+    <div class="field"><label for="f-acc">Account</label><select id="f-acc" name="account">{% for a in cash %}<option value="{{ a }}">{{ accounts[a][0] }} (ledger now {{ balances[a]|money }})</option>{% endfor %}</select></div>
+    {{ field("statement_date", "Statement date", "date", today.isoformat(), True) }}
+    {{ field("statement_balance", "Closing balance on the statement", required=True) }}
+    {{ field("notes", "Notes", "textarea") }}
+    <button class="btn" type="submit">Save reconciliation</button>
+  </form>
+</section>
+{% endif %}
+<section class="card">
+  <h2>History</h2>
+  {% if items %}<div class="table-wrap"><table><thead><tr><th scope="col">Date</th><th scope="col">Account</th><th scope="col" class="num">Statement</th><th scope="col" class="num">Ledger</th><th scope="col" class="num">Difference</th><th scope="col">By</th></tr></thead>
+  <tbody>{% for r in items %}<tr><td>{{ r.statement_date|date }}</td><td>{{ accounts[r.account][0] }}</td><td class="num">{{ r.statement_balance_cents|money }}</td><td class="num">{{ r.ledger_balance_cents|money }}</td><td class="num">{{ r.difference_cents|money }}</td><td class="small">{{ r.reconciled_by.full_name if r.reconciled_by }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty("No reconciliations yet.") }}{% endif %}
+</section>
+</div>
+{% endblock %}

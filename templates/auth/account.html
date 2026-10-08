@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field %}
+{% block title %}{{ _('Account Settings') }}{% endblock %}
+{% block content %}
+<h1>{{ _('Account Settings') }}</h1>
+<p class="kv-inline"><span>Signed in as <strong>{{ current_user.email }}</strong></span><span>Role: <strong>{{ ROLE_LABELS[current_user.role_name] }}</strong></span>
+{% if current_user.last_login_at %}<span>Last login: <strong>{{ current_user.last_login_at|dt }}</strong></span>{% endif %}</p>
+<div class="grid grid-2">
+  <section class="card">
+    <h2>Change password</h2>
+    <form method="post" class="form">
+      {{ csrf() }}<input type="hidden" name="action" value="password">
+      {{ field("current_password", "Current password", "password", required=True, autocomplete="current-password") }}
+      {{ field("new_password", "New password", "password", required=True, help="At least 10 characters, with letters and numbers.", autocomplete="new-password") }}
+      {{ field("confirm_password", "Confirm new password", "password", required=True, autocomplete="new-password") }}
+      <button class="btn" type="submit">Change password</button>
+    </form>
+  </section>
+  <div class="stack">
+    <section class="card">
+      <h2>{{ _('Language') }}</h2>
+      <form method="post" class="form">
+        {{ csrf() }}<input type="hidden" name="action" value="language">
+        <div class="field"><label for="f-language">Preferred language</label>
+          <select id="f-language" name="language">{% for code, name in LANGUAGES.items() %}<option value="{{ code }}"{% if code == current_lang %} selected{% endif %}>{{ name }}</option>{% endfor %}</select></div>
+        <button class="btn secondary" type="submit">Save</button>
+      </form>
+      <p class="small muted">Kiswahili translations are being added gradually; untranslated text appears in English.</p>
+    </section>
+    {% if current_user.is_staff %}
+    <section class="card">
+      <h2>Two-factor authentication</h2>
+      {% if current_user.totp_enabled %}
+        <p><span class="badge active">On</span> Your account asks for a code from your authenticator app at login.</p>
+        <form method="post" class="form">
+          {{ csrf() }}<input type="hidden" name="action" value="disable_2fa">
+          {{ field("code", "Current 6-digit code (to turn off)", "text", required=True, attrs='inputmode="numeric" maxlength="7"') }}
+          <button class="btn danger" type="submit">Turn off</button>
+        </form>
+      {% else %}
+        <p>Protect your staff account with a code from your phone.</p>
+        <a class="btn" href="{{ url_for('auth.two_factor_setup') }}">Set up two-factor authentication</a>
+      {% endif %}
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

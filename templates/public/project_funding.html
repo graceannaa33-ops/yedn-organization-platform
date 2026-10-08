@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import risk_notice with context %}
+{% block title %}Responsible Project Funding{% endblock %}
+{% block content %}
+<div class="prose">
+<h1>Responsible investment &amp; project funding</h1>
+<p>{{ org_short }} may use approved organizational funds to support projects and enterprises that meet the organization's requirements.</p>
+<h2>Possible project areas</h2>
+<ul class="link-list">{% for s in content.PROJECT_SECTORS %}<li class="badge">{{ s }}</li>{% endfor %}</ul>
+<h2>How a project is considered</h2>
+<ol>
+  <li>A project or enterprise is proposed.</li>
+  <li>It is reviewed against {{ org_short }}'s objectives.</li>
+  <li>A financial review checks the budget and funding needed.</li>
+  <li>A risk assessment considers what could go wrong.</li>
+  <li>Only an approved project can receive funding, and only from available funds.</li>
+  <li>Funded projects report progress, expenses and revenue, which are verified and published.</li>
+</ol>
+<p><strong>Not every project will receive funding, and no project is guaranteed to make a profit.</strong></p>
+</div>
+{{ risk_notice() }}
+<p><a class="btn secondary" href="{{ url_for('public.projects') }}">See current projects</a></p>
+{% endblock %}

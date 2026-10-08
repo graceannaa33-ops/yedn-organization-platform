@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field %}
+{% block title %}{{ _('Log in') }}{% endblock %}
+{% block content %}
+<div class="grid grid-2">
+  <section class="card">
+    <p class="muted">{{ org_full }}</p>
+    <h1>{{ _('Log in') }} to {{ org_short }}</h1>
+    <form method="post" class="form">
+      {{ csrf() }}
+      {{ field("email", "Email address", "email", email, True, autocomplete="username") }}
+      {{ field("password", "Password", "password", required=True, autocomplete="current-password") }}
+      <button class="btn block" type="submit">{{ _('Log in') }}</button>
+    </form>
+    <p class="small muted">Forgot your password? Open a complaint or contact the organisation and an administrator will reset it after confirming who you are.</p>
+  </section>
+  <section class="card">
+    <h2>New to {{ org_short }}?</h2>
+    <p>{{ setting('organization_supporting_message') }}</p>
+    <p><a class="btn secondary" href="{{ url_for('auth.register') }}">Join {{ org_short }}</a> <a href="{{ url_for('public.membership') }}">How membership works</a></p>
+    {% if is_demo and show_demo_logins %}
+    <div class="notice small">
+      <strong>Demo accounts</strong> (password <span class="mono">{{ demo_password }}</span>):<br>
+      superadmin@demo.org · finance@demo.org · pm@demo.org · auditor@demo.org · partner@demo.org · member1@demo.org … member5@demo.org
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

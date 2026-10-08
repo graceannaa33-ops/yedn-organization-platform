@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge %}
+{% block title %}{{ m.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ m.title }}</h1><p class="kv-inline"><span>{{ m.meeting_at|dt }}</span><span>{{ badge(m.status) }}</span></p></div></div>
+<div class="grid grid-2">
+<section class="card">
+  <h2>Agenda, minutes and decisions</h2>
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="action" value="record">
+    <div class="field"><label for="f-status">Status</label><select id="f-status" name="status">{% for s in ['Scheduled','Held','Cancelled'] %}<option{% if s == m.status %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+    {{ field("location", "Location", value=m.location) }}{{ field("online_link", "Online link", "url", m.online_link) }}
+    {{ field("agenda", "Agenda", "textarea", m.agenda) }}
+    {{ field("minutes", "Minutes", "textarea", m.minutes) }}
+    {{ field("decisions", "Decisions", "textarea", m.decisions) }}
+    {{ field("follow_up_actions", "Follow-up actions", "textarea", m.follow_up_actions) }}
+    <button class="btn" type="submit">Save</button>
+  </form>
+</section>
+<div class="stack">
+<section class="card">
+  <h2>Attendance</h2>
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="action" value="attendance">
+    <div class="table-wrap"><table><thead><tr><th scope="col">Member</th><th scope="col">Reply / record</th><th scope="col">Mark</th></tr></thead>
+    <tbody>{% for mem in members %}<tr><td>{{ mem.member_number }} {{ mem.full_name }}</td><td>{{ attendance.get(mem.id, '—') }}</td>
+    <td><label class="sr-only" for="att-{{ mem.id }}">Attendance for {{ mem.member_number }}</label><select id="att-{{ mem.id }}" name="att_{{ mem.id }}"><option value="">—</option><option{% if attendance.get(mem.id) == 'Attended' %} selected{% endif %}>Attended</option><option{% if attendance.get(mem.id) == 'Absent' %} selected{% endif %}>Absent</option></select></td></tr>{% endfor %}</tbody></table></div>
+    <button class="btn secondary" type="submit">Save attendance</button>
+  </form>
+</section>
+<section class="card">
+  <h2>Documents</h2>
+  {% if m.documents %}<ul>{% for d in m.documents %}<li><a href="{{ url_for('community.document', doc_id=d.id) }}">{{ d.title }}</a> <span class="small muted">({{ d.kind }})</span></li>{% endfor %}</ul>{% endif %}
+  <form method="post" enctype="multipart/form-data" class="form">{{ csrf() }}<input type="hidden" name="action" value="document">
+    {{ field("title", "Title") }}
+    <div class="field"><label for="f-kind">Type</label><select id="f-kind" name="kind"><option value="document">Document</option><option value="minutes">Signed minutes</option></select></div>
+    {{ field("file", "File (PDF/JPG/PNG)", "file", required=True) }}
+    <button class="btn secondary" type="submit">Upload</button></form>
+</section>
+</div>
+</div>
+{% endblock %}

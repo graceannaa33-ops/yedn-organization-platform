@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge, empty %}
+{% block title %}Calculate distribution{% endblock %}
+{% block content %}
+<h1>Calculate a distribution</h1>
+{% if problems %}
+<p class="notice"><strong>Rules not configured:</strong> {{ problems|join(' ') }}</p>
+{% else %}
+<div class="grid grid-2">
+<section class="card">
+  <form method="post" class="form">{{ csrf() }}
+    <div class="field"><label for="f-project">Project</label><select id="f-project" name="project_id" required><option value="">Choose…</option>
+      {% for p, fin, avail in projects %}<option value="{{ p.id }}"{% if form.project_id == p.id|string %} selected{% endif %}{% if avail <= 0 %} disabled{% endif %}>{{ p.name }} — available {{ avail|money }}</option>{% endfor %}</select></div>
+    {{ field("amount", "Net distributable amount", value=form.amount, required=True, help="Cannot exceed the project's verified net result minus amounts already distributed.") }}
+    {{ field("record_date", "Record date", "date", form.record_date or today.isoformat(), True, help="Eligibility is checked as at the end of this date.") }}
+    {{ field("title", "Title", value=form.title) }}
+    {{ field("notes", "Notes", "textarea", form.notes) }}
+    {% if preview %}<input type="hidden" name="confirm" value="yes">
+      <button class="btn" type="submit">Create this distribution (needs approval)</button>
+    {% else %}<button class="btn" type="submit">Preview</button>{% endif %}
+  </form>
+  {% if preview %}<p class="small muted">Change any field and the preview will be recalculated when you save. <a href="{{ url_for('distributions.new') }}">Start again</a></p>{% endif %}
+</section>
+<section class="card">
+  <h2>Rules that will be applied</h2>
+  <ul>{% for line in rules %}<li>{{ line }}</li>{% endfor %}</ul>
+</section>
+</div>
+{% if preview %}
+<h2>Preview for {{ preview.project.name }}</h2>
+<div class="stats">
+  <div class="stat"><div class="label">Distributable</div><div class="value">{{ preview.net|money }}</div></div>
+  <div class="stat"><div class="label">Eligible members</div><div class="value">{{ preview.eligible|length }}</div></div>
+  <div class="stat"><div class="label">Allocated</div><div class="value">{{ preview.distributed|money }}</div></div>
+  <div class="stat amber"><div class="label">Rounding remainder kept</div><div class="value">{{ preview.remainder|money }}</div></div>
+</div>
+<div class="grid grid-2">
+<section class="card"><h3>Eligible</h3><div class="table-wrap"><table><thead><tr><th scope="col">Member</th><th scope="col" class="num">Verified contribution</th><th scope="col" class="num">Share</th></tr></thead>
+<tbody>{% for e in preview.eligible %}<tr><td>{{ e.member.member_number }} {{ e.member.full_name }}{% if e.late %} {{ badge('Late') }}{% endif %}</td><td class="num">{{ e.basis|money }}</td><td class="num">{{ e.amount|money }}</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="card"><h3>Not eligible</h3>{% if preview.excluded %}<ul class="small">{% for m, reason in preview.excluded %}<li>{{ m.member_number }} {{ m.full_name }} — {{ reason }}</li>{% endfor %}</ul>{% else %}{{ empty("Everyone qualifies.") }}{% endif %}</section>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}{{ o.title }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('content.opportunities') }}">← Opportunities</a></p>
+<h1>{{ o.title }}</h1>
+<section class="card">{% include "admin/_opportunity_fields.html" %}</section>
+<form method="post" class="card">{{ csrf() }}<input type="hidden" name="action" value="delete"><button class="btn danger small" type="submit">Remove this opportunity</button></form>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% from "_macros.html" import report_body %}
+{% block title %}{{ _('Statement') }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>My statement</h1>
+<div class="actions"><a class="btn secondary" href="{{ url_for('members.statement', fmt='pdf') }}">Download PDF</a>
+<a class="btn secondary" href="{{ url_for('members.statement', fmt='csv') }}">Download CSV</a></div></div>
+{{ report_body(report) }}
+{% endblock %}

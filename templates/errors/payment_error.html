@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Payment problem{% endblock %}
+{% block content %}
+<section class="error-page">
+  <p class="code">!</p>
+  <h1>Payments are not available right now</h1>
+  <p>{{ message or "The payment service could not be reached." }}</p>
+  <p class="muted">No money has been taken. Please try again later or contact the organisation.</p>
+  <p><a class="btn" href="{{ url_for('members.dashboard') if current_user else url_for('public.home') }}">Back</a></p>
+</section>
+{% endblock %}

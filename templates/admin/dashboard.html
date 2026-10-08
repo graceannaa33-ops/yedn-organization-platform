@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stat, badge, empty %}
+{% block title %}Admin dashboard{% endblock %}
+{% block content %}
+<div class="page-head"><div><p class="muted">{{ org_full }}</p><h1>{{ org_short }} administration</h1><p class="muted">Signed in as {{ current_user.full_name }} · {{ ROLE_LABELS[current_user.role_name] }}</p></div></div>
+{% if not s.balanced %}<p class="notice danger"><strong>Ledger check failed:</strong> total debits do not equal total credits. Investigate immediately.</p>{% endif %}
+
+<h2>Members</h2>
+<div class="stats">
+  {{ stat("Total members", counts.total, href=url_for('admin.members') if can('view_members') else None) }}
+  {{ stat("Active", counts.by_status.get('active', 0)) }}
+  {{ stat("Pending approval", counts.by_status.get('pending', 0), tone="amber", href=url_for('admin.members', status='pending') if can('view_members') else None) }}
+  {{ stat("Fully paid", counts.full) }}
+  {{ stat("Partially paid", counts.partial, tone="amber") }}
+  {{ stat("Unpaid", counts.unpaid, tone="red") }}
+</div>
+
+<h2>Money</h2>
+<div class="stats">
+  {{ stat("Total contributions", s.contributions|money, tone="blue") }}
+  {{ stat("Organisation balance", s.held|money, "cash + mobile money + reserve") }}
+  {{ stat("Available funds", s.available|money) }}
+  {{ stat("Invested (released)", s.invested|money, tone="amber") }}
+  {{ stat("Distributions paid", s.distributions|money) }}
+</div>
+
+<div class="grid grid-2">
+  <section class="card">
+    <h2>Needs attention</h2>
+    <div class="stats">
+      {{ stat("Pending payments", pending.payments, tone="amber", href=url_for('finance.payments', status='Pending') if can('view_finance') else None) }}
+      {{ stat("Transactions to approve", pending.transactions, tone="amber", href=url_for('finance.verification') if can('view_finance') else None) }}
+      {{ stat("Projects in review", pending.projects, tone="amber", href=url_for('projects.index') if can('view_projects_admin') else None) }}
+      {{ stat("Distributions to approve", pending.distributions, tone="amber", href=url_for('distributions.index') if can('view_distributions') else None) }}
+      {{ stat("Partner reports to verify", pending.reports, tone="amber", href=url_for('finance.verification') if can('view_finance') else None) }}
+      {{ stat("Open complaints", pending.complaints, tone="red", href=url_for('community.complaints') if can('view_support') else None) }}
+      {{ stat("Open tickets", pending.tickets, href=url_for('community.tickets') if can('view_support') else None) }}
+      {{ stat("Open alerts", pending.flags, tone="red", href=url_for('admin.alerts') if can('view_flags') else None) }}
+    </div>
+  </section>
+  <section class="card">
+    <h2>Contributions received (last 6 months)</h2>
+    <div class="bars">
+      {% for m in monthly %}<div class="bar-row"><span>{{ m.label }}</span><div class="bar-track"><div class="bar w-{{ m.pct }}"></div></div><span class="num">{{ m.amount|money }}</span></div>{% endfor %}
+    </div>
+    <h3>Projects</h3>
+    <p class="kv-inline">{% for st, n in projects.items() %}<span>{{ badge(st) }} {{ n }}</span>{% else %}<span>No projects yet.</span>{% endfor %}</p>
+  </section>
+</div>
+
+<h2>Recent activity</h2>
+{% if recent %}
+<div class="table-wrap"><table><thead><tr><th scope="col">When</th><th scope="col">User</th><th scope="col">Action</th><th scope="col">Record</th></tr></thead>
+<tbody>{% for a in recent %}<tr><td>{{ a.created_at|dt }}</td><td>{{ a.user_email }}</td><td>{{ a.action }}</td><td class="mono small">{{ a.record_type or '' }} {{ a.record_id or '' }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}{{ empty() }}{% endif %}
+{% endblock %}

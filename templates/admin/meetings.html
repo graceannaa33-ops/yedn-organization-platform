@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge, empty %}
+{% block title %}Meetings{% endblock %}
+{% block content %}
+<h1>Meetings</h1>
+<div class="grid grid-2">
+<section class="card">
+  {% if items %}<div class="table-wrap"><table><thead><tr><th scope="col">Meeting</th><th scope="col">When</th><th scope="col">Status</th></tr></thead>
+  <tbody>{% for m in items %}<tr><td><a href="{{ url_for('community.meeting', meeting_id=m.id) }}">{{ m.title }}</a></td><td>{{ m.meeting_at|dt }}</td><td>{{ badge(m.status) }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty("No meetings yet.") }}{% endif %}
+</section>
+<section class="card">
+  <h2>Schedule a meeting</h2>
+  <form method="post" class="form">{{ csrf() }}
+    {{ field("title", "Title", required=True) }}
+    {{ field("meeting_at", "Date and time (local time)", "datetime-local", required=True) }}
+    {{ field("location", "Location") }}{{ field("online_link", "Online link", "url") }}
+    {{ field("agenda", "Agenda", "textarea") }}
+    <button class="btn" type="submit">Schedule</button>
+  </form>
+</section>
+</div>
+{% endblock %}

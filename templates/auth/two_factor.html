@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field %}
+{% block title %}Two-factor check{% endblock %}
+{% block content %}
+<section class="card prose">
+  <h1>Enter your security code</h1>
+  <p>Open your authenticator app and type the 6-digit code for this website.</p>
+  <form method="post" class="form">
+    {{ csrf() }}
+    {{ field("code", "6-digit code", "text", required=True, autocomplete="one-time-code", attrs='inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7"') }}
+    <button class="btn" type="submit">Verify</button>
+  </form>
+</section>
+{% endblock %}

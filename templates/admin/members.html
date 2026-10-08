@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, pagination, empty %}
+{% block title %}Members{% endblock %}
+{% block content %}
+<h1>Members</h1>
+<form method="get" class="filters" role="search">
+  <div class="field"><label for="f-q">Search</label><input id="f-q" type="search" name="q" value="{{ search }}" placeholder="Name, member ID, email, phone, ID number"></div>
+  <div class="field"><label for="f-status">Account status</label><select id="f-status" name="status"><option value="">All</option>{% for s in ['pending','active','suspended','exited'] %}<option value="{{ s }}"{% if s == status %} selected{% endif %}>{{ s|title }}</option>{% endfor %}</select></div>
+  <button class="btn secondary" type="submit">Search</button>
+</form>
+{% if rows %}
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Member ID</th><th scope="col">Name</th><th scope="col">Phone</th><th scope="col">Account</th><th scope="col" class="num">Paid</th><th scope="col" class="num">Remaining</th><th scope="col">Payment status</th><th scope="col">ID doc</th></tr></thead>
+<tbody>{% for m, s in rows %}
+<tr><td class="mono"><a href="{{ url_for('admin.member', member_id=m.id) }}">{{ m.member_number }}</a></td><td>{{ m.full_name }}</td><td>{{ m.phone|mask_phone }}</td><td>{{ badge(m.status|title) }}</td>
+<td class="num">{{ s.paid|money }}</td><td class="num">{{ s.remaining|money }}</td><td>{{ badge(s.status) }}</td><td>{{ 'Yes' if m.current_id_document else 'No' }}</td></tr>
+{% endfor %}</tbody></table></div>
+{{ pagination(page, 'admin.members') }}
+{% else %}{{ empty("No members match.") }}{% endif %}
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, badge %}
+{% block title %}Payment {{ payment.reference }}{% endblock %}
+{% block head %}{% if payment.status == 'Pending' %}<meta http-equiv="refresh" content="8">{% endif %}{% endblock %}
+{% block content %}
+<section class="card prose">
+  <h1>Payment {{ badge(payment.status) }}</h1>
+  <table class="kv"><tbody>
+    <tr><th scope="row">Amount</th><td class="num">{{ payment.amount_cents|money }}</td></tr>
+    <tr><th scope="row">Reference</th><td class="mono">{{ payment.reference }}</td></tr>
+    <tr><th scope="row">Phone</th><td>{{ payment.phone }}</td></tr>
+    <tr><th scope="row">Started</th><td>{{ payment.created_at|dt }}</td></tr>
+    {% if payment.provider_receipt %}<tr><th scope="row">M-PESA / provider receipt</th><td class="mono">{{ payment.provider_receipt }}</td></tr>{% endif %}
+  </tbody></table>
+  {% if payment.status == 'Pending' %}
+    <p class="notice info" role="status">Waiting for confirmation. Check your phone and enter your PIN. This page refreshes itself every few seconds.</p>
+    {% if sandbox %}<p><a class="btn" href="{{ url_for('payments.sandbox_phone', checkout_id=sandbox.checkout_id) }}">Open the simulated phone (test mode)</a></p>{% endif %}
+    <div class="btn-row">
+      <form method="post" action="{{ url_for('payments.check', reference=payment.reference) }}">{{ csrf() }}<button class="btn secondary" type="submit">Check status now</button></form>
+      <form method="post" action="{{ url_for('payments.cancel', reference=payment.reference) }}">{{ csrf() }}<button class="btn secondary" type="submit">I did not get a prompt — cancel</button></form>
+    </div>
+  {% elif payment.status == 'Successful' %}
+    <p class="notice info">Payment confirmed by the provider and recorded. Thank you!</p>
+    <p><a class="btn" href="{{ url_for('payments.receipt', reference=payment.reference) }}">View receipt</a> <a class="btn secondary" href="{{ url_for('members.dashboard') }}">Back to dashboard</a></p>
+  {% else %}
+    <p class="notice danger">This payment was not completed{% if payment.provider_result_desc %}: {{ payment.provider_result_desc }}{% endif %}. No money was recorded.</p>
+    <p><a class="btn" href="{{ url_for('payments.new') }}">Try again</a></p>
+  {% endif %}
+</section>
+{% endblock %}

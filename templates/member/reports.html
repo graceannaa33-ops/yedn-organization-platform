@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+{% block title %}{{ _('Reports') }}{% endblock %}
+{% block content %}
+<h1>Reports</h1>
+<p><a class="btn secondary" href="{{ url_for('members.statement') }}">My statement</a></p>
+<h2>Organisation reports</h2>
+{% if items %}<ul>{% for r in items %}<li><a href="{{ url_for('transparency.report', report_id=r.id) }}">{{ r.title }}</a> — <a href="{{ url_for('transparency.report', report_id=r.id, fmt='pdf') }}">PDF</a> · <a href="{{ url_for('transparency.report', report_id=r.id, fmt='csv') }}">CSV</a></li>{% endfor %}</ul>
+{% else %}{{ empty("No reports published yet.") }}{% endif %}
+{% endblock %}

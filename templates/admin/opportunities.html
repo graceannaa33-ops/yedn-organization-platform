@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, empty %}
+{% block title %}Opportunities{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Opportunities</h1><p class="muted">Share confirmed scholarships, internships, jobs, grants, competitions and training.</p></div>
+<div class="actions"><a class="btn secondary" href="{{ url_for('public.opportunities') }}">Public page</a></div></div>
+<div class="grid grid-2">
+<section class="card">
+  {% if items %}<div class="table-wrap"><table><thead><tr><th scope="col">Opportunity</th><th scope="col">Type</th><th scope="col">Deadline</th><th scope="col">Visible</th></tr></thead>
+  <tbody>{% for o in items %}<tr><td><a href="{{ url_for('content.opportunity', opp_id=o.id) }}">{{ o.title }}</a></td><td>{{ o.opportunity_type }}</td><td>{{ o.deadline|date if o.deadline else '—' }}</td><td>{{ badge('Published' if o.is_published else 'Draft') }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty("No opportunities yet.") }}{% endif %}
+</section>
+<section class="card"><h2>New opportunity</h2>{% set o = None %}{% include "admin/_opportunity_fields.html" %}</section>
+</div>
+{% endblock %}

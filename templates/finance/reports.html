@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, badge, empty %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<h1>Reports</h1>
+<p class="muted">Every report is calculated from the ledger. Export as PDF or CSV from the report page.</p>
+<div class="grid grid-3">
+{% for key, info in types.items() %}
+<section class="card">
+  <h2>{{ info.label }}</h2>
+  <form method="get" action="{{ url_for('reports.view', report_type=key) }}" class="form">
+    {% if info.period == 'month' %}
+      <div class="form-grid"><div class="field"><label for="{{ key }}-y">Year</label><input id="{{ key }}-y" type="number" name="year" value="{{ now_year or "" }}" min="2000" max="2100"></div>
+      <div class="field"><label for="{{ key }}-m">Month</label><select id="{{ key }}-m" name="month">{% for m in range(1,13) %}<option value="{{ m }}">{{ m }}</option>{% endfor %}</select></div></div>
+    {% elif info.period == 'quarter' %}
+      <div class="form-grid"><div class="field"><label for="{{ key }}-y">Year</label><input id="{{ key }}-y" type="number" name="year" value="{{ now_year or "" }}" min="2000" max="2100"></div>
+      <div class="field"><label for="{{ key }}-q">Quarter</label><select id="{{ key }}-q" name="quarter">{% for q in range(1,5) %}<option value="{{ q }}">Q{{ q }}</option>{% endfor %}</select></div></div>
+    {% elif info.period == 'year' %}
+      <div class="field"><label for="{{ key }}-y">Year</label><input id="{{ key }}-y" type="number" name="year" value="{{ now_year or "" }}" min="2000" max="2100"></div>
+    {% else %}
+      <div class="form-grid"><div class="field"><label for="{{ key }}-s">From</label><input id="{{ key }}-s" type="date" name="start"></div><div class="field"><label for="{{ key }}-e">To</label><input id="{{ key }}-e" type="date" name="end"></div></div>
+    {% endif %}
+    <button class="btn secondary" type="submit">View report</button>
+  </form>
+  <p class="small muted">{{ 'Can be published' if info.public else 'Staff only (contains private data)' }}</p>
+</section>
+{% endfor %}
+</div>
+<h2>Published reports</h2>
+{% if published %}<div class="table-wrap"><table><thead><tr><th scope="col">Report</th><th scope="col">Published</th><th scope="col">Visible</th><th scope="col"></th></tr></thead>
+<tbody>{% for r in published %}<tr><td><a href="{{ url_for('transparency.report', report_id=r.id) }}">{{ r.title }}</a></td><td>{{ r.published_at|date }}</td><td>{{ badge('Public' if r.is_published else 'Hidden') }}</td>
+<td>{% if can('publish_reports') %}<form method="post" action="{{ url_for('reports.unpublish', report_id=r.id) }}">{{ csrf() }}<button class="btn secondary small" type="submit">{{ 'Hide' if r.is_published else 'Show' }}</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}{{ empty("Nothing published yet.") }}{% endif %}
+{% endblock %}

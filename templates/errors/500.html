@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Something went wrong{% endblock %}
+{% block content %}
+<section class="error-page">
+  <p class="code">500</p>
+  <h1>Something went wrong</h1>
+  <p>An unexpected error happened. It has been logged and the team can investigate. Please try again later.</p>
+  <p><a class="btn" href="{{ url_for('public.home') }}">Go to the home page</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+<p class="muted">Secrets (payment keys, SMS keys, email passwords) are never stored here — they are set as environment variables on the server.</p>
+<nav class="btn-row" aria-label="Settings sections">
+  {% for id, label in [('identity','Identity'),('general','General'),('contributions','Contributions'),('distribution','Distribution rules'),('templates','Notification templates'),('legal','Legal documents')] %}<a class="btn secondary small" href="#{{ id }}">{{ label }}</a>{% endfor %}
+  <a class="btn secondary small" href="{{ url_for('admin.staff') }}">Roles & staff</a>
+</nav>
+
+<section class="card" id="identity">
+  <h2>Organization identity</h2>
+  <p class="small muted">The full name appears on formal pages, reports, receipts and statements; the short name in navigation, dashboards and messages. Only add registration, university or leadership details once they are official and verified. Use {org} and {short} in longer texts.</p>
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="section" value="identity">
+    <div class="form-grid">
+      {{ field("organization_name", "Official organization name", value=setting('organization_name'), required=True) }}
+      {{ field("organization_short_name", "Short name", value=setting('organization_short_name'), required=True) }}
+      {{ field("organization_website", "Website", "url", setting('organization_website')) }}
+      {{ field("organization_registration", "Registration information (only if official)", value=setting('organization_registration')) }}
+    </div>
+    {{ field("organization_tagline", "Primary tagline", value=setting('organization_tagline')) }}
+    {{ field("organization_supporting_message", "Supporting message", value=setting('organization_supporting_message')) }}
+    {% for key, label, help in [('organization_description','Organization description',''),('vision_text','Vision',''),('mission_text','Mission',''),('founding_text','About the founding','Do not invent founder names, dates or registration numbers.'),('founding_team_text','Founding team (optional, official information only)','Shown on the About page when filled in.'),('leadership_text','Leadership (optional, official information only)','Shown on the Structure and Governance pages when filled in.'),('university_relationship','University relationship (only once formally confirmed)','Leave empty unless a formal relationship is documented.')] %}
+    <details{% if loop.index <= 3 %} open{% endif %}><summary>{{ label }}</summary>{{ field(key, label, "textarea", setting(key), help=help or None) }}</details>
+    {% endfor %}
+    <button class="btn" type="submit">Save identity</button>
+  </form>
+</section>
+
+<section class="card" id="general">
+  <h2>General</h2>
+  <form method="post" enctype="multipart/form-data" class="form">{{ csrf() }}<input type="hidden" name="section" value="general">
+    <div class="form-grid">
+      {{ field("contact_email", "Contact email", "email", setting('contact_email')) }}
+      {{ field("contact_phone", "Contact phone", value=setting('contact_phone')) }}
+      {{ field("contact_address", "Address", value=setting('contact_address')) }}
+      {{ field("currency", "Currency label", value=setting('currency'), required=True, help="Shown before amounts, e.g. KSh") }}
+      {{ field("logo", "Logo (PNG/JPG)", "file", attrs='accept=".png,.jpg,.jpeg"') }}
+      <div class="field"><label for="f-provider">Payment provider</label>
+        <select id="f-provider" name="payment_provider">
+          <option value=""{% if not setting('payment_provider') %} selected{% endif %}>Use server setting ({{ config.PAYMENT_PROVIDER }})</option>
+          <option value="mpesa"{% if setting('payment_provider') == 'mpesa' %} selected{% endif %}>M-PESA (needs keys in environment)</option>
+          <option value="sandbox"{% if setting('payment_provider') == 'sandbox' %} selected{% endif %}>Sandbox simulator (testing only)</option>
+        </select></div>
+    </div>
+    {{ field("project_categories", "Project categories (comma separated)", value=setting('project_categories')) }}
+    {{ field("maintenance_message", "Maintenance message", value=setting('maintenance_message')) }}
+    <fieldset><legend>Switches</legend>
+      {% for key, label in [('require_membership_approval','New members need approval before paying'),('require_two_person_approval','Two-person rule: a different officer must approve money movements'),('require_admin_2fa','Staff must use two-factor authentication'),('sms_enabled','Send SMS notifications'),('email_enabled','Send email notifications'),('maintenance_mode','Maintenance mode (public site shows maintenance page; staff can still log in)')] %}
+      <div class="check"><input type="checkbox" id="s-{{ key }}" name="{{ key }}"{% if setting(key) == '1' %} checked{% endif %}><label for="s-{{ key }}">{{ label }}</label></div>
+      {% endfor %}
+    </fieldset>
+    <button class="btn" type="submit">Save general settings</button>
+  </form>
+</section>
+
+<section class="card" id="contributions">
+  <h2>Contributions</h2>
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="section" value="contributions">
+    <div class="form-grid">
+      {{ field("contribution_amount", "Required contribution", value=amount, required=True) }}
+      {{ field("min_payment", "Minimum single payment", value=min_payment, required=True) }}
+      <div class="field"><label for="f-period">Contribution period</label><select id="f-period" name="contribution_period">
+        {% for v, l in [('one-off','One-off'),('annual','Annual'),('quarterly','Quarterly'),('monthly','Monthly')] %}<option value="{{ v }}"{% if setting('contribution_period') == v %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+      {{ field("contribution_period_label", "Label", value=setting('contribution_period_label')) }}
+      {{ field("contribution_due_date", "Contribution deadline", "date", setting('contribution_due_date'), help="Used by the late-completion distribution rule.") }}
+    </div>
+    <button class="btn" type="submit">Save contribution settings</button>
+  </form>
+  <p class="small muted">Changing the amount does not change obligations members already have. The current period is "<strong>{{ period_label }}</strong>".</p>
+  <form method="post" action="{{ url_for('admin.apply_contribution_period') }}">{{ csrf() }}<button class="btn secondary" type="submit">Create "{{ period_label }}" obligation for all members who don't have it</button></form>
+</section>
+
+<section class="card" id="distribution">
+  <h2>Distribution rules</h2>
+  {% if rules_problems %}<p class="notice"><strong>Not configured.</strong> No distribution can be calculated until these are set: {{ rules_problems|join(' ') }}</p>{% endif %}
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="section" value="distribution">
+    <fieldset><legend>1. Who is eligible (on the record date)?</legend>
+      {% for k, v in basis.items() %}<div class="check"><input type="radio" id="b-{{ k }}" name="dist_eligibility_basis" value="{{ k }}"{% if setting('dist_eligibility_basis') == k %} checked{% endif %} required><label for="b-{{ k }}">{{ v }}</label></div>{% endfor %}</fieldset>
+    <fieldset><legend>2. How is the amount shared?</legend>
+      {% for k, v in methods.items() %}<div class="check"><input type="radio" id="m-{{ k }}" name="dist_allocation_method" value="{{ k }}"{% if setting('dist_allocation_method') == k %} checked{% endif %} required><label for="m-{{ k }}">{{ v }}</label></div>{% endfor %}</fieldset>
+    <fieldset><legend>3. Members who complete their contribution after the deadline</legend>
+      {% for k, v in late.items() %}<div class="check"><input type="radio" id="l-{{ k }}" name="dist_late_policy" value="{{ k }}"{% if setting('dist_late_policy') == k %} checked{% endif %} required><label for="l-{{ k }}">{{ v }}</label></div>{% endfor %}</fieldset>
+    {{ field("dist_rules_notes", "Notes shown on the public Distribution Rules page (e.g. where members approved these rules)", "textarea", setting('dist_rules_notes')) }}
+    <button class="btn" type="submit">Save distribution rules</button>
+  </form>
+</section>
+
+<section class="card" id="templates">
+  <h2>Notification templates</h2>
+  <p class="small muted">Placeholders: {amount}, {total}, {remaining}, {reference}, {reason}, {project}</p>
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="section" value="templates">
+    {{ field("tpl_payment_received", "Payment received", "textarea", setting('tpl_payment_received')) }}
+    {{ field("tpl_payment_failed", "Payment failed", "textarea", setting('tpl_payment_failed')) }}
+    {{ field("tpl_payment_reversed", "Payment reversed", "textarea", setting('tpl_payment_reversed')) }}
+    {{ field("tpl_distribution_paid", "Distribution paid", "textarea", setting('tpl_distribution_paid')) }}
+    <button class="btn" type="submit">Save templates</button>
+  </form>
+</section>
+
+<section class="card" id="legal">
+  <h2>Legal documents and page text</h2>
+  <p class="small muted">Use {org} for the organisation name. A blank line starts a new paragraph; lines starting with "- " become bullet points. Do not claim licences or approvals you do not have.</p>
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="section" value="legal">
+    {% for key, label in [('about_text','About page'),('legal_terms','Terms'),('legal_privacy','Privacy Policy'),('legal_risk','Risk Disclosure'),('legal_contribution_rules','Contribution Rules'),('legal_refund','Refund Policy'),('legal_complaints','Complaints Policy')] %}
+    <details><summary>{{ label }}</summary>{{ field(key, label, "textarea", setting(key), attrs='rows="14"') }}</details>
+    {% endfor %}
+    <button class="btn" type="submit">Save legal documents</button>
+  </form>
+</section>
+{% endblock %}

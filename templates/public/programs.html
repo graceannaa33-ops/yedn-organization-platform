@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}{{ _('Programs') }}{% endblock %}
+{% block content %}
+<h1>{{ org_short }} programs</h1>
+{% if items %}
+<div class="grid grid-2">{% for p in items %}
+<article class="card">
+  <div class="card-head"><h2><a href="{{ url_for('public.program', program_id=p.id) }}">{{ p.title }}</a></h2>{{ badge(p.status) }}</div>
+  {{ p.description|paragraphs }}
+  {% if p.eligibility %}<p class="small"><strong>Eligibility:</strong> {{ p.eligibility|truncate(140) }}</p>{% endif %}
+  <p><a href="{{ url_for('public.program', program_id=p.id) }}">Details and how to apply →</a></p>
+</article>{% endfor %}</div>
+{% else %}
+<p class="notice info">No programs have been published yet. Programs appear here once {{ org_short }} confirms and announces them.</p>
+{% endif %}
+<h2>Program areas {{ org_short }} focuses on</h2>
+<p class="muted small">These are the areas {{ org_short }} works in. A program is only open when it is published above with its status.</p>
+<div class="tile-grid">{% for title, text in content.PROGRAM_AREAS %}<article class="tile"><h3>{{ title }}</h3><p>{{ text }}</p></article>{% endfor %}</div>
+{% endblock %}

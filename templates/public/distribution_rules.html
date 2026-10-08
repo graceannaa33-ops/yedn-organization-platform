@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Distribution Rules{% endblock %}
+{% block content %}
+<article class="prose">
+<h1>Distribution rules</h1>
+{% if problems %}
+<p class="notice"><strong>The organisation has not yet documented its distribution rules.</strong> No distribution can be calculated until it does. Missing: {{ problems|join(' ') }}</p>
+{% else %}
+<p>These are the rules the system applies, exactly as configured by the organisation:</p>
+<ul>{% for line in lines %}<li>{{ line }}</li>{% endfor %}</ul>
+<h2>What the late-completion rule means</h2>
+<ul>
+  <li><strong>Current and future:</strong> members who finish paying after the deadline are treated the same as everyone else once they are fully paid.</li>
+  <li><strong>Future only:</strong> they share in projects funded <em>after</em> they finished paying, but not in projects that were already funded.</li>
+  <li><strong>None:</strong> they do not share in distributions.</li>
+</ul>
+{% endif %}
+{% if notes %}<h2>Notes from the organisation</h2>{{ notes|paragraphs }}{% endif %}
+<h2>How amounts are worked out</h2>
+<ul>
+  <li>Only the verified net result of a project (revenue − expenses) can be distributed, minus anything already distributed from it.</li>
+  <li>Eligibility is checked on the <em>record date</em> chosen for each distribution, using verified payments only.</li>
+  <li>Shares are rounded down to the cent. Leftover cents stay with the organisation and are reported.</li>
+  <li>Every distribution needs approval by a second officer before payment, and every payment is recorded in the ledger.</li>
+</ul>
+</article>
+{% endblock %}

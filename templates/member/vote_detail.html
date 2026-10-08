@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, badge %}
+{% block title %}{{ vote.title }}{% endblock %}
+{% block content %}
+<div class="grid grid-2">
+<section class="card">
+  <h1>{{ vote.title }}</h1>
+  <p class="kv-inline"><span>{{ vote.opens_at|dt }} – {{ vote.closes_at|dt }}</span><span>Who may vote: <strong>{{ 'Fully paid members' if vote.eligibility == 'fully_paid' else 'All active members' }}</strong></span></p>
+  {{ vote.description|paragraphs }}
+  {% if vote.budget_cents %}<p>Budget: <strong>{{ vote.budget_cents|money }}</strong></p>{% endif %}
+  {% if vote.risks %}<h3>Risks</h3>{{ vote.risks|paragraphs }}{% endif %}
+  {% if vote.documents %}<h3>Supporting documents</h3><ul>{% for d in vote.documents %}<li><a href="{{ url_for('community.document', doc_id=d.id) }}">{{ d.title }}</a></li>{% endfor %}</ul>{% endif %}
+</section>
+<section class="card">
+  {% if vote.status == 'Closed' %}
+    <h2>Result: {{ badge(vote.result) }}</h2>
+    <table class="kv"><tbody><tr><th scope="row">Yes</th><td>{{ vote.yes_count }}</td></tr><tr><th scope="row">No</th><td>{{ vote.no_count }}</td></tr><tr><th scope="row">Abstain</th><td>{{ vote.abstain_count }}</td></tr><tr><th scope="row">Eligible voters</th><td>{{ vote.eligible_count }}</td></tr></tbody></table>
+    <p class="small muted">Quorum {{ vote.quorum_percent }}% of eligible voters; passes with more than {{ vote.pass_percent }}% Yes among Yes and No votes.</p>
+  {% elif ballot %}
+    <h2>Thank you</h2><p>You voted <strong>{{ ballot.choice|title }}</strong> on {{ ballot.cast_at|dt }}. Votes cannot be changed. Results are shown when voting closes.</p>
+  {% elif not eligible %}
+    <h2>Not eligible</h2><p>Only {{ 'fully paid members' if vote.eligibility == 'fully_paid' else 'active members' }} can vote on this proposal.</p>
+  {% elif not is_open %}
+    <h2>Voting is not open</h2>
+  {% else %}
+    <h2>Cast your vote</h2>
+    <form method="post" class="form">{{ csrf() }}
+      <fieldset><legend>Your choice</legend>
+      {% for value, label in [('yes','Yes'),('no','No'),('abstain','Abstain')] %}
+      <div class="check"><input type="radio" id="c-{{ value }}" name="choice" value="{{ value }}" required><label for="c-{{ value }}">{{ label }}</label></div>
+      {% endfor %}</fieldset>
+      <p class="small muted">Your vote is secret: staff see only totals. You can vote once.</p>
+      <button class="btn" type="submit">Submit vote</button>
+    </form>
+  {% endif %}
+</section>
+</div>
+{% endblock %}

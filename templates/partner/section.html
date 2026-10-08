@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, empty %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+{% if items %}
+<div class="table-wrap"><table>
+{% if section == 'updates' %}
+<thead><tr><th scope="col">When</th><th scope="col">Project</th><th scope="col">Update</th></tr></thead>
+<tbody>{% for u in items %}<tr><td>{{ u.created_at|dt }}</td><td><a href="{{ url_for('partner.project', project_id=u.project_id) }}">{{ u.project.name }}</a></td><td><strong>{{ u.title }}</strong>{% if u.body %}<br><span class="small">{{ u.body|truncate(200) }}</span>{% endif %}</td></tr>{% endfor %}</tbody>
+{% elif section == 'milestones' %}
+<thead><tr><th scope="col">Project</th><th scope="col">Milestone</th><th scope="col">Due</th><th scope="col">Status</th></tr></thead>
+<tbody>{% for m in items %}<tr><td><a href="{{ url_for('partner.project', project_id=m.project_id) }}">{{ m.project.name }}</a></td><td>{{ m.title }}</td><td>{{ m.due_date|date if m.due_date else '—' }}</td><td>{{ badge(m.status) }}</td></tr>{% endfor %}</tbody>
+{% elif section in ('expenses', 'revenue') %}
+<thead><tr><th scope="col">Date</th><th scope="col">Project</th><th scope="col">Description</th><th scope="col" class="num">Amount</th><th scope="col">Status</th></tr></thead>
+<tbody>{% for e in items %}<tr><td>{{ (e.expense_date if section == 'expenses' else e.revenue_date)|date }}</td><td>{{ e.project.name }}</td><td>{{ e.description }}{% if e.receipt %} · <a href="{{ url_for('community.document', doc_id=e.receipt.id) }}">receipt</a>{% endif %}</td><td class="num">{{ e.amount_cents|money }}</td><td>{{ badge(e.status) }}{% if e.rejection_reason %}<br><span class="small muted">{{ e.rejection_reason }}</span>{% endif %}</td></tr>{% endfor %}</tbody>
+{% else %}
+<thead><tr><th scope="col">Uploaded</th><th scope="col">Project</th><th scope="col">Document</th><th scope="col">Type</th></tr></thead>
+<tbody>{% for d in items %}<tr><td>{{ d.uploaded_at|dt }}</td><td>{{ d.project.name }}</td><td><a href="{{ url_for('community.document', doc_id=d.id) }}">{{ d.title }}</a></td><td>{{ doc_kinds.get(d.kind, d.kind) }}</td></tr>{% endfor %}</tbody>
+{% endif %}
+</table></div>
+{% else %}{{ empty() }}{% endif %}
+{% endblock %}

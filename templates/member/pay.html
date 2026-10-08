@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, stat, risk_notice with context %}
+{% block title %}{{ _('Make a payment') }}{% endblock %}
+{% block content %}
+<h1>Make a payment</h1>
+<div class="stats">{{ stat(_('Total paid'), summary.paid|money, tone="blue") }}{{ stat(_('Remaining'), summary.remaining|money, tone="amber") }}</div>
+{% if not summary.open %}
+<p class="notice info">Your contribution is fully paid. Thank you!</p>
+{% else %}
+{{ risk_notice() }}
+<div class="grid grid-2">
+<section class="card">
+  <form method="post" class="form">
+    {{ csrf() }}
+    <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+    <div class="field"><label for="f-contribution">Paying for</label>
+      <select id="f-contribution" name="contribution_id" required>
+        {% for r in summary.rows if r.remaining > 0 %}<option value="{{ r.contribution.id }}">{{ r.contribution.period_label }} — {{ r.remaining|money }} remaining</option>{% endfor %}
+      </select></div>
+    {{ field("amount", "Amount (" ~ setting('currency') ~ ")", "text", form.amount or '', True, help="Pay the full remaining amount or any part of it. Minimum " ~ (setting('min_payment_cents')|int|money) ~ ".", attrs='inputmode="decimal" pattern="[0-9,]+(\\.[0-9]{1,2})?"') }}
+    {{ field("phone", "M-PESA phone number", "tel", form.phone or member.phone, True, help="You will get a prompt on this phone to enter your M-PESA PIN.") }}
+    <button class="btn block" type="submit">Send payment request</button>
+  </form>
+</section>
+<section class="card">
+  <h2>How it works</h2>
+  <ol>
+    <li>Press <strong>Send payment request</strong>.</li>
+    <li>Your phone shows an M-PESA prompt. Enter your PIN.</li>
+    <li>This website checks with {{ provider.label }} directly. Your balance updates only after the payment is confirmed.</li>
+  </ol>
+  <p class="small muted">Pressing the button twice will not charge you twice.</p>
+  {% if provider.name == 'sandbox' %}<p class="notice small"><strong>Test mode:</strong> payments go to a built-in simulator, not real M-PESA. No real money moves.</p>{% endif %}
+</section>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, badge, empty %}
+{% block title %}Approvals{% endblock %}
+{% block content %}
+<h1>Approvals and verification</h1>
+<p class="muted">Items waiting for a second person. You cannot approve items you created yourself.</p>
+
+<h2>Transactions waiting for approval</h2>
+{% if pending_txns %}<div class="table-wrap"><table><thead><tr><th scope="col">Transaction</th><th scope="col">Type</th><th scope="col">Description</th><th scope="col" class="num">Amount</th><th scope="col">Created by</th></tr></thead>
+<tbody>{% for t in pending_txns %}<tr><td class="mono small"><a href="{{ url_for('finance.transaction', txn_id=t.id) }}">{{ t.txn_number }}</a></td><td>{{ t.type|replace('_',' ')|title }}</td><td class="small">{{ t.description }}</td><td class="num">{{ t.amount_cents|money }}</td><td class="small">{{ t.created_by.full_name if t.created_by }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}{{ empty("Nothing waiting.") }}{% endif %}
+
+<h2>Bank / cash payments to verify</h2>
+{% if pending_payments %}<ul>{% for p in pending_payments %}<li><a href="{{ url_for('finance.payment', payment_id=p.id) }}">{{ p.reference }}</a> — {{ p.member.member_number }} — {{ p.amount_cents|money }} — <span class="mono">{{ p.provider_receipt }}</span></li>{% endfor %}</ul>
+{% else %}{{ empty("Nothing waiting.") }}{% endif %}
+
+<h2>Project expenses reported by partners</h2>
+{% if expenses %}{% for e in expenses %}
+<article class="card">
+  <div class="card-head"><h3>{{ e.project.name }}: {{ e.description }}</h3><strong>{{ e.amount_cents|money }}</strong></div>
+  <p class="small muted">{{ e.expense_date|date }} · {{ e.category }} · reported by {{ e.reported_by.full_name if e.reported_by }} {% if e.receipt %}· <a href="{{ url_for('community.document', doc_id=e.receipt.id) }}">receipt</a>{% else %}· no receipt{% endif %}</p>
+  {% if can('verify_project_finance') %}
+  <form method="post" class="btn-row">{{ csrf() }}<input type="hidden" name="kind" value="expense"><input type="hidden" name="item_id" value="{{ e.id }}">
+    <button class="btn small" name="decision" value="verify">Verify</button>
+    <label class="sr-only" for="er-{{ e.id }}">Reason to reject</label><input id="er-{{ e.id }}" name="reason" placeholder="Reason to reject">
+    <button class="btn danger small" name="decision" value="reject">Reject</button></form>{% endif %}
+</article>
+{% endfor %}{% else %}{{ empty("Nothing waiting.") }}{% endif %}
+
+<h2>Project revenue reported by partners</h2>
+{% if revenues %}{% for r in revenues %}
+<article class="card">
+  <div class="card-head"><h3>{{ r.project.name }}: {{ r.description }}</h3><strong>{{ r.amount_cents|money }}</strong></div>
+  <p class="small muted">{{ r.revenue_date|date }} · {{ r.source }} · reported by {{ r.reported_by.full_name if r.reported_by }}{% if r.receipt %} · <a href="{{ url_for('community.document', doc_id=r.receipt.id) }}">document</a>{% endif %}</p>
+  {% if can('verify_project_finance') %}
+  <form method="post" class="btn-row">{{ csrf() }}<input type="hidden" name="kind" value="revenue"><input type="hidden" name="item_id" value="{{ r.id }}">
+    <label class="sr-only" for="rc-{{ r.id }}">Received into</label><select id="rc-{{ r.id }}" name="cash_account">{% for c in cash %}<option value="{{ c }}">{{ accounts[c][0] }}</option>{% endfor %}</select>
+    <button class="btn small" name="decision" value="verify">Verify (money received)</button>
+    <label class="sr-only" for="rr-{{ r.id }}">Reason to reject</label><input id="rr-{{ r.id }}" name="reason" placeholder="Reason to reject">
+    <button class="btn danger small" name="decision" value="reject">Reject</button></form>{% endif %}
+</article>
+{% endfor %}{% else %}{{ empty("Nothing waiting.") }}{% endif %}
+{% endblock %}

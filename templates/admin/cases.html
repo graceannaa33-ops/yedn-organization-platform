@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, pagination, empty %}
+{% block title %}{{ 'Support tickets' if kind == 'ticket' else 'Complaints' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Support tickets' if kind == 'ticket' else 'Complaints' }}</h1>
+<nav class="btn-row" aria-label="Filter by status"><a class="btn {{ 'secondary' if status else '' }} small" href="?">All</a>{% for s in statuses %}<a class="btn {{ '' if s == status else 'secondary' }} small" href="?status={{ s|urlencode }}">{{ s }}</a>{% endfor %}</nav>
+{% if page.items %}
+<div class="table-wrap"><table><thead><tr><th scope="col">Reference</th><th scope="col">Subject</th><th scope="col">From</th><th scope="col">Category</th><th scope="col">Status</th><th scope="col">Assigned</th><th scope="col">Updated</th></tr></thead>
+<tbody>{% for c in page.items %}<tr>
+<td class="mono small"><a href="{{ request.path.rstrip('/') }}/{{ c.id }}">{{ c.ticket_number if kind == 'ticket' else c.complaint_number }}</a></td>
+<td>{{ c.subject }}</td><td>{{ c.user.full_name if kind == 'ticket' else c.name }}</td><td>{{ c.category }}</td><td>{{ badge(c.status) }}</td><td>{{ c.assigned_to.full_name if c.assigned_to else '—' }}</td><td>{{ c.updated_at|date }}</td></tr>{% endfor %}</tbody></table></div>
+{{ pagination(page, 'community.tickets' if kind == 'ticket' else 'community.complaints') }}
+{% else %}{{ empty() }}{% endif %}
+{% endblock %}

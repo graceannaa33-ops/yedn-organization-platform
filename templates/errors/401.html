@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Please log in{% endblock %}
+{% block content %}
+<section class="error-page">
+  <p class="code">401</p>
+  <h1>Please log in</h1>
+  <p>You need to log in to see this page. <a href="{{ url_for('auth.login') }}">Log in</a>.</p>
+  <p><a class="btn" href="{{ url_for('public.home') }}">Go to the home page</a></p>
+</section>
+{% endblock %}

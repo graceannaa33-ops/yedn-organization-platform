@@ -1,0 +1,14 @@
+{% from "_macros.html" import csrf, field %}
+<form method="post" class="form">{{ csrf() }}
+  {{ field("title", "Program title", value=p.title if p else '', required=True) }}
+  {{ field("description", "Description", "textarea", p.description if p else '', True) }}
+  {{ field("objectives", "Objectives", "textarea", p.objectives if p else '') }}
+  {{ field("eligibility", "Eligibility", "textarea", p.eligibility if p else '') }}
+  {{ field("application_info", "Application information", "textarea", p.application_info if p else '') }}
+  <div class="form-grid">
+    <div class="field"><label for="f-status">Status</label><select id="f-status" name="status">{% for s in statuses %}<option{% if p and p.status == s %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+    {{ field("sort_order", "Display order", "number", p.sort_order if p else 0) }}
+  </div>
+  <div class="check"><input type="checkbox" id="f-pub" name="is_published"{% if p and p.is_published %} checked{% endif %}><label for="f-pub">Published (visible on the public website)</label></div>
+  <button class="btn" type="submit">Save program</button>
+</form>

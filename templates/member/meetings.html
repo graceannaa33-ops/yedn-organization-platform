@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, badge, empty %}
+{% block title %}{{ _('Meetings') }}{% endblock %}
+{% block content %}
+<h1>Meetings</h1>
+{% if items %}{% for m in items %}
+<details{% if m.meeting_at >= now %} open{% endif %}>
+  <summary>{{ m.title }} — {{ m.meeting_at|dt }} {{ badge(m.status) }}</summary>
+  <p class="kv-inline">{% if m.location %}<span>Where: <strong>{{ m.location }}</strong></span>{% endif %}{% if m.online_link %}<span>Online: <a href="{{ m.online_link }}" rel="noopener nofollow">{{ m.online_link }}</a></span>{% endif %}
+  {% if mine.get(m.id) %}<span>Your status: {{ badge(mine[m.id]) }}</span>{% endif %}</p>
+  {% if m.agenda %}<h3>Agenda</h3>{{ m.agenda|paragraphs }}{% endif %}
+  {% if m.minutes %}<h3>Minutes</h3>{{ m.minutes|paragraphs }}{% endif %}
+  {% if m.decisions %}<h3>Decisions</h3>{{ m.decisions|paragraphs }}{% endif %}
+  {% if m.follow_up_actions %}<h3>Follow-up actions</h3>{{ m.follow_up_actions|paragraphs }}{% endif %}
+  {% if m.documents %}<h3>Documents</h3><ul>{% for d in m.documents %}<li><a href="{{ url_for('community.document', doc_id=d.id) }}">{{ d.title }}</a></li>{% endfor %}</ul>{% endif %}
+  {% if m.status == 'Scheduled' and m.meeting_at >= now %}
+  <form method="post" class="btn-row">{{ csrf() }}<input type="hidden" name="meeting_id" value="{{ m.id }}">
+    <button class="btn small" name="rsvp" value="Attending" type="submit">I will attend</button>
+    <button class="btn secondary small" name="rsvp" value="Not attending" type="submit">I cannot attend</button></form>
+  {% endif %}
+</details>
+{% endfor %}{% else %}{{ empty("No meetings yet.") }}{% endif %}
+{% endblock %}

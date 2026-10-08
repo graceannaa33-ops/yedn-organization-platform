@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge %}
+{% block title %}{{ v.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ v.title }}</h1><p class="kv-inline"><span>{{ v.opens_at|dt }} – {{ v.closes_at|dt }}</span><span>{{ badge(v.result or v.status) }}</span><span>{{ 'Fully paid members' if v.eligibility == 'fully_paid' else 'All active members' }}</span></p></div></div>
+<div class="grid grid-2">
+<section class="card">{{ v.description|paragraphs }}{% if v.budget_cents %}<p>Budget: <strong>{{ v.budget_cents|money }}</strong></p>{% endif %}{% if v.risks %}<h3>Risks</h3>{{ v.risks|paragraphs }}{% endif %}
+  <h3>Supporting documents</h3>{% if v.documents %}<ul>{% for d in v.documents %}<li><a href="{{ url_for('community.document', doc_id=d.id) }}">{{ d.title }}</a></li>{% endfor %}</ul>{% endif %}
+  {% if v.status == 'Open' %}<form method="post" enctype="multipart/form-data" class="form">{{ csrf() }}<input type="hidden" name="action" value="document">{{ field("title", "Title") }}{{ field("file", "File", "file", required=True) }}<button class="btn secondary small" type="submit">Upload</button></form>{% endif %}
+</section>
+<section class="card">
+  <h2>{{ 'Result' if v.status == 'Closed' else 'Turnout so far' }}</h2>
+  {% if v.status == 'Closed' %}
+  <table class="kv"><tbody><tr><th scope="row">Yes</th><td>{{ v.yes_count }}</td></tr><tr><th scope="row">No</th><td>{{ v.no_count }}</td></tr><tr><th scope="row">Abstain</th><td>{{ v.abstain_count }}</td></tr><tr><th scope="row">Eligible</th><td>{{ v.eligible_count }}</td></tr><tr class="total"><th scope="row">Result</th><td>{{ v.result }}</td></tr></tbody></table>
+  {% else %}
+  <p>{{ counts.yes + counts.no + counts.abstain }} of {{ eligible }} eligible members have voted. Individual choices are not shown; totals appear when voting closes.</p>
+  <form method="post" class="btn-row">{{ csrf() }}<button class="btn" name="action" value="close">Close vote and count</button>
+  {% if not v.ballots %}<input type="hidden" name="reason" value="Cancelled before any votes"><button class="btn secondary" name="action" value="cancel">Cancel vote</button>{% endif %}</form>
+  {% endif %}
+  <p class="small muted">Quorum {{ v.quorum_percent }}%. Passes with more than {{ v.pass_percent }}% Yes among Yes+No votes.</p>
+</section>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, empty, stat %}
+{% block title %}{{ _('Distributions') }}{% endblock %}
+{% block content %}
+<h1>My distributions</h1>
+<div class="stats">{{ stat("Total paid to you", paid|money) }}</div>
+{% if items %}
+<div class="table-wrap"><table>
+  <thead><tr><th scope="col">Distribution</th><th scope="col">Project</th><th scope="col">Record date</th><th scope="col" class="num">Amount</th><th scope="col">Status</th><th scope="col">Paid</th><th scope="col">Method</th><th scope="col">Reference</th></tr></thead>
+  <tbody>{% for d in items %}
+  <tr><td class="mono small">{{ d.dist_number }}</td><td>{{ d.project.name }}</td><td>{{ d.run.record_date|date }}</td><td class="num">{{ d.amount_cents|money }}</td><td>{{ badge(d.status) }}</td>
+  <td>{{ d.paid_at|dt if d.paid_at else '—' }}</td><td>{{ (d.payment_method or '—')|upper }}</td><td class="mono small">{{ d.payment_reference or '—' }}</td></tr>
+  {% endfor %}</tbody></table></div>
+{% else %}{{ empty("No distributions yet.") }}{% endif %}
+<p class="small muted">How eligibility works: <a href="{{ url_for('public.legal', slug='distribution-rules') }}">distribution rules</a>. Distributions are never guaranteed.</p>
+{% endblock %}

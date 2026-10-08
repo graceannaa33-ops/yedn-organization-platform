@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Receipt {{ payment.reference }}{% endblock %}
+{% block content %}
+<section class="card prose">
+  <div class="card-head"><h1>Payment receipt</h1>{{ badge(payment.status) }}</div>
+  <p><strong>{{ org_full }}</strong><br><span class="small muted">{{ [setting('contact_address'), setting('contact_phone'), setting('contact_email'), setting('organization_website')]|select|join(' · ') }}</span></p>
+  <table class="kv"><tbody>
+    <tr><th scope="row">Received from</th><td>{{ payment.member.full_name }} ({{ payment.member.member_number }})</td></tr>
+    <tr><th scope="row">Amount</th><td class="num">{{ payment.amount_cents|money }}</td></tr>
+    <tr><th scope="row">For</th><td>{{ payment.contribution.period_label }}</td></tr>
+    <tr><th scope="row">Method</th><td>{{ payment.method|upper }}</td></tr>
+    <tr><th scope="row">Payment reference</th><td class="mono">{{ payment.reference }}</td></tr>
+    <tr><th scope="row">Provider reference</th><td class="mono">{{ payment.provider_receipt or '—' }}</td></tr>
+    <tr><th scope="row">Verified</th><td>{{ payment.verified_at|dt }}</td></tr>
+    {% if payment.status == 'Reversed' %}<tr><th scope="row">Reversed</th><td>{{ payment.reversed_at|dt }} — {{ payment.reversal_reason }}</td></tr>{% endif %}
+  </tbody></table>
+  <p class="actions"><a class="btn secondary" href="{{ url_for('payments.receipt', reference=payment.reference, fmt='pdf') }}">Download PDF</a></p>
+</section>
+{% endblock %}

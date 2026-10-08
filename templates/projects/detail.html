@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge, progress, timeline, project_finance, empty %}
+{% block title %}{{ p.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ p.name }}</h1>
+<p class="kv-inline"><span class="mono">{{ p.code }}</span><span>{{ badge(p.status) }}</span><span>{{ p.category }}</span>{% if p.location %}<span>{{ p.location }}</span>{% endif %}
+{% if p.partner %}<span>Partner: <strong>{{ p.partner.name }}</strong></span>{% endif %}{% if p.manager %}<span>Manager: <strong>{{ p.manager.full_name }}</strong></span>{% endif %}{% if p.risk_level %}<span>Risk: {{ badge(p.risk_level) }}</span>{% endif %}</p></div>
+<div class="actions">{% if can('manage_projects') and p.status not in ('Completed','Cancelled') %}<a class="btn secondary" href="{{ url_for('projects.edit', project_id=p.id) }}">Edit</a>{% endif %}
+{% if p.is_public and p.status not in ('Proposed','Under Review','Due Diligence') %}<a class="btn secondary" href="{{ url_for('public.project', project_id=p.id) }}">Public page</a>{% endif %}</div></div>
+
+<div class="stats">
+  <div class="stat"><div class="label">Requested</div><div class="value">{{ fin.requested|money }}</div></div>
+  <div class="stat"><div class="label">Approved</div><div class="value">{{ fin.approved|money }}</div></div>
+  <div class="stat amber"><div class="label">Released</div><div class="value">{{ fin.released|money }}</div>{% if fin.pending_release %}<div class="hint">+ {{ fin.pending_release|money }} awaiting approval</div>{% endif %}</div>
+  <div class="stat blue"><div class="label">Revenue</div><div class="value">{{ fin.revenue|money }}</div>{% if fin.reported_revenue %}<div class="hint">{{ fin.reported_revenue|money }} reported, unverified</div>{% endif %}</div>
+  <div class="stat red"><div class="label">Expenses</div><div class="value">{{ fin.expenses|money }}</div>{% if fin.reported_expenses %}<div class="hint">{{ fin.reported_expenses|money }} reported, unverified</div>{% endif %}</div>
+  <div class="stat"><div class="label">Net result</div><div class="value">{{ fin.net|money }}</div><div class="hint">Distributed: {{ fin.distributed|money }}</div></div>
+</div>
+
+<div class="grid grid-2">
+<section class="card">
+  <h2>Workflow</h2>
+  <ol class="small">
+    <li>Proposal {{ badge('Completed') }}</li>
+    <li>Review {{ badge('Completed' if p.review_notes else 'Pending') }}</li>
+    <li>Financial review {{ badge('Completed' if p.financial_review_notes else 'Pending') }}</li>
+    <li>Risk assessment {{ badge('Completed' if p.risk_assessment_notes else 'Pending') }}</li>
+    <li>Approval {{ badge('Completed' if p.approved_at else 'Pending') }}{% if p.approved_at %} <span class="muted">{{ p.approved_at|date }}</span>{% endif %}</li>
+    <li>Funding {{ badge('Completed' if fin.released else 'Pending') }}</li>
+    <li>Monitoring {{ badge('In Progress' if p.status in ('Active','Delayed') else ('Completed' if p.status == 'Completed' else 'Pending')) }}</li>
+    <li>Final report {{ badge('Completed' if p.documents|selectattr('kind','equalto','final_report')|list else 'Pending') }}</li>
+  </ol>
+  {% if actions %}
+  <form method="post" action="{{ url_for('projects.action', project_id=p.id) }}" class="form">{{ csrf() }}<input type="hidden" name="kind" value="transition">
+    {{ field("reason", "Reason / note", help="Required to delay, suspend or cancel.") }}
+    <div class="btn-row">{% for key, label in actions %}<button class="btn {{ 'danger' if key in ('cancel','suspend') else ('secondary' if key == 'mark_delayed' else '') }} small" name="action" value="{{ key }}">{{ label }}</button>{% endfor %}</div>
+  </form>
+  {% endif %}
+
+  {% if p.status in ('Proposed','Under Review') and can('manage_projects') %}
+  <details{% if not p.review_notes %} open{% endif %}><summary>Review notes</summary>
+    <form method="post" action="{{ url_for('projects.action', project_id=p.id) }}" class="form">{{ csrf() }}<input type="hidden" name="kind" value="review"><input type="hidden" name="review_type" value="review">
+    {{ field("notes", "Review notes", "textarea", p.review_notes, True) }}<button class="btn secondary small" type="submit">Save review</button></form></details>
+  {% elif p.review_notes %}<h3>Review</h3>{{ p.review_notes|paragraphs }}{% endif %}
+
+  {% if p.status == 'Due Diligence' and can('financial_review') %}
+  <details open><summary>Financial review</summary>
+    <form method="post" action="{{ url_for('projects.action', project_id=p.id) }}" class="form">{{ csrf() }}<input type="hidden" name="kind" value="review"><input type="hidden" name="review_type" value="financial">
+    {{ field("notes", "Financial review", "textarea", p.financial_review_notes, True) }}
+    {{ field("approved", "Recommended (approved) funding", value=(p.approved_cents|money(show_currency=False)).replace(',', '') if p.approved_cents else '', help="The approver approves this amount.") }}
+    <button class="btn secondary small" type="submit">Save financial review</button></form></details>
+  {% elif p.financial_review_notes %}<h3>Financial review</h3>{{ p.financial_review_notes|paragraphs }}{% endif %}
+
+  {% if p.status == 'Due Diligence' and can('risk_assessment') %}
+  <details open><summary>Risk assessment</summary>
+    <form method="post" action="{{ url_for('projects.action', project_id=p.id) }}" class="form">{{ csrf() }}<input type="hidden" name="kind" value="review"><input type="hidden" name="review_type" value="risk">
+    {{ field("notes", "Risk assessment", "textarea", p.risk_assessment_notes, True) }}
+    <div class="field"><label for="f-risk">Risk level</label><select id="f-risk" name="risk_level" required>{% for r in ['Low','Medium','High'] %}<option{% if r == p.risk_level %} selected{% endif %}>{{ r }}</option>{% endfor %}</select></div>
+    <button class="btn secondary small" type="submit">Save risk assessment</button></form></details>
+  {% elif p.risk_assessment_notes %}<h3>Risk assessment ({{ p.risk_level }})</h3>{{ p.risk_assessment_notes|paragraphs }}{% endif %}
+</section>
+
+<section class="card">
+  <h2>Project finances</h2>
+  {{ project_finance(fin) }}
+  {% if can('release_funding') and p.status in ('Approved','Funding Pending','Active','Delayed') and fin.unreleased > fin.pending_release %}
+  <details><summary>Release funding</summary>
+    <form method="post" action="{{ url_for('projects.action', project_id=p.id) }}" class="form">{{ csrf() }}<input type="hidden" name="kind" value="release">
+      {{ field("amount", "Amount", required=True, help="Up to " ~ ((fin.unreleased - fin.pending_release)|money) ~ " can still be released.") }}
+      <div class="field"><label for="f-cash">Paid from</label><select id="f-cash" name="cash_account">{% for c in cash %}<option value="{{ c }}">{{ accounts[c][0] }}</option>{% endfor %}</select></div>
+      {{ field("note", "Note") }}
+      <button class="btn" type="submit">Release funds</button>
+      <p class="small muted">With the two-person rule on, a different officer approves the release in the ledger before it counts.</p>
+    </form></details>
+  {% endif %}
+  {% if funding_txns %}<h3>Funding transactions</h3><ul class="small">{% for t in funding_txns %}<li>{% if can('view_finance') %}<a href="{{ url_for('finance.transaction', txn_id=t.id) }}">{{ t.txn_number }}</a>{% else %}{{ t.txn_number }}{% endif %} — {{ t.amount_cents|money }} {{ badge(t.approval_status|title) }}{% if t.is_reversal %} (reversal){% endif %}</li>{% endfor %}</ul>{% endif %}
+</section>
+</div>
+
+<div class="grid grid-2">
+<section class="card">
+  <h2>Milestones</h2>
+  {{ progress(p.progress_percent, "Completion") }}
+  {% if p.milestones %}<div class="table-wrap"><table><thead><tr><th scope="col">Milestone</th><th scope="col">Due</th><th scope="col">Status</th></tr></thead><tbody>
+  {% for m in p.milestones %}<tr><td>{{ m.title }}</td><td>{{ m.due_date|date if m.due_date else '—' }}</td><td>
+    {% if can('manage_projects') %}<form method="post" action="{{ url_for('projects.action', project_id=p.id) }}" class="btn-row">{{ csrf() }}<input type="hidden" name="kind" value="milestone"><input type="hidden" name="milestone_id" value="{{ m.id }}">
+    <label class="sr-only" for="ms-{{ m.id }}">Status</label><select id="ms-{{ m.id }}" name="status">{% for s in milestone_statuses %}<option{% if s == m.status %} selected{% endif %}>{{ s }}</option>{% endfor %}</select><button class="btn secondary small" type="submit">Update</button></form>
+    {% else %}{{ badge(m.status) }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}{{ empty("No milestones yet.") }}{% endif %}
+  {% if can('manage_projects') %}
+  <details><summary>Add milestone</summary><form method="post" action="{{ url_for('projects.action', project_id=p.id) }}" class="form">{{ csrf() }}<input type="hidden" name="kind" value="milestone">
+    {{ field("title", "Title", required=True) }}{{ field("due_date", "Due date", "date") }}{{ field("description", "Description", "textarea") }}<button class="btn secondary small" type="submit">Add</button></form></details>
+  <details><summary>Post a progress update</summary><form method="post" action="{{ url_for('projects.action', project_id=p.id) }}" class="form">{{ csrf() }}<input type="hidden" name="kind" value="update">
+    <div class="field"><label for="f-uk">Type</label><select id="f-uk" name="update_kind"><option value="progress">Progress</option><option value="challenge">Challenge</option><option value="delay">Delay</option><option value="decision">Decision</option></select></div>
+    {{ field("progress_percent", "Completion %", "number", p.progress_percent, attrs='min="0" max="100"') }}{{ field("body", "Update", "textarea", required=True) }}
+    <div class="check"><input type="checkbox" id="f-up-pub" name="is_public" checked><label for="f-up-pub">Show on public timeline</label></div>
+    <button class="btn secondary small" type="submit">Post update</button></form></details>
+  {% endif %}
+</section>
+<section class="card">
+  <h2>Documents, receipts and photos</h2>
+  {% if p.documents %}<div class="table-wrap"><table><thead><tr><th scope="col">Document</th><th scope="col">Type</th><th scope="col">By</th><th scope="col">Public</th></tr></thead><tbody>
+  {% for d in p.documents %}<tr><td><a href="{{ url_for('community.document', doc_id=d.id) }}">{{ d.title }}</a><br><span class="small muted">{{ d.uploaded_at|date }}</span></td><td>{{ doc_kinds.get(d.kind, d.kind) }}</td><td class="small">{{ d.uploaded_by.full_name if d.uploaded_by else '' }}</td>
+  <td>{% if can('manage_projects') %}<form method="post" action="{{ url_for('projects.action', project_id=p.id) }}">{{ csrf() }}<input type="hidden" name="kind" value="doc_visibility"><input type="hidden" name="doc_id" value="{{ d.id }}"><button class="btn secondary small" type="submit">{{ 'Public — hide' if d.is_public else 'Private — publish' }}</button></form>{% else %}{{ 'Yes' if d.is_public else 'No' }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty("No documents yet.") }}{% endif %}
+  {% if can('manage_projects') %}
+  <details><summary>Upload</summary><form method="post" action="{{ url_for('projects.action', project_id=p.id) }}" enctype="multipart/form-data" class="form">{{ csrf() }}<input type="hidden" name="kind" value="document">
+    <div class="field"><label for="f-dk">Type</label><select id="f-dk" name="doc_kind">{% for k, v in doc_kinds.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+    {{ field("title", "Title") }}{{ field("file", "File (PDF/JPG/PNG)", "file", required=True) }}
+    <div class="check"><input type="checkbox" id="f-dpub" name="is_public"><label for="f-dpub">Public</label></div>
+    <button class="btn secondary small" type="submit">Upload</button></form></details>
+  {% endif %}
+  <h3>Reported expenses and revenue</h3>
+  <ul class="small">{% for e in p.expenses %}<li>Expense {{ e.expense_date|date }} — {{ e.description }} — {{ e.amount_cents|money }} {{ badge(e.status) }}</li>{% endfor %}
+  {% for r in p.revenues %}<li>Revenue {{ r.revenue_date|date }} — {{ r.description }} — {{ r.amount_cents|money }} {{ badge(r.status) }}</li>{% endfor %}</ul>
+  {% if can('verify_project_finance') %}<p><a href="{{ url_for('finance.verification') }}">Verify reported items →</a></p>{% endif %}
+</section>
+</div>
+
+<h2>Timeline</h2>
+{{ timeline(p.updates) }}
+{% endblock %}

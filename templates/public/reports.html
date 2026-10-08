@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+{% block title %}{{ _('Reports') }}{% endblock %}
+{% block content %}
+<h1>Published reports</h1>
+<p class="muted">Each report is calculated from the ledger when you open it.</p>
+{% if items %}
+<div class="table-wrap"><table>
+  <thead><tr><th scope="col">Report</th><th scope="col">Period</th><th scope="col">Published</th><th scope="col">Download</th></tr></thead>
+  <tbody>{% for r in items %}
+  <tr><td><a href="{{ url_for('transparency.report', report_id=r.id) }}">{{ r.title }}</a></td><td>{{ r.period_start|date }} – {{ r.period_end|date }}</td><td>{{ r.published_at|date }}</td>
+  <td><a href="{{ url_for('transparency.report', report_id=r.id, fmt='pdf') }}">PDF</a> · <a href="{{ url_for('transparency.report', report_id=r.id, fmt='csv') }}">CSV</a></td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}{{ empty("No reports have been published yet.") }}{% endif %}
+{% endblock %}

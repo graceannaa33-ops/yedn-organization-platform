@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge, empty %}
+{% block title %}Programs{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ org_short }} programs</h1><p class="muted">Only published programs appear on the public Programs page.</p></div>
+<div class="actions"><a class="btn secondary" href="{{ url_for('public.programs') }}">Public page</a></div></div>
+<div class="grid grid-2">
+<section class="card">
+  {% if items %}<div class="table-wrap"><table><thead><tr><th scope="col">Program</th><th scope="col">Status</th><th scope="col">Visible</th></tr></thead>
+  <tbody>{% for p in items %}<tr><td><a href="{{ url_for('content.program', program_id=p.id) }}">{{ p.title }}</a></td><td>{{ badge(p.status) }}</td><td>{{ badge('Published' if p.is_published else 'Draft') }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty("No programs yet.") }}{% endif %}
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="action" value="add_drafts">
+    <p class="small muted">Shortcut: add the twelve standard {{ org_short }} program areas as <strong>unpublished drafts</strong>. Fill in real details before publishing any of them.</p>
+    <button class="btn secondary small" type="submit">Add the 12 program areas as drafts</button></form>
+</section>
+<section class="card">
+  <h2>New program</h2>
+  {% include "admin/_program_fields.html" %}
+</section>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge %}
+{% block title %}{{ txn.txn_number }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Transaction <span class="mono">{{ txn.txn_number }}</span></h1>
+<p class="kv-inline"><span>{{ badge(txn.approval_status|title) }}</span><span>{{ badge(txn.verification_status|replace('_',' ')|title) }}</span>{% if txn.is_reversal %}<span>{{ badge('Reversal') }}</span>{% endif %}</p></div></div>
+<div class="grid grid-2">
+<section class="card">
+  <table class="kv"><tbody>
+    <tr><th scope="row">Type</th><td>{{ types.get(txn.type, txn.type) }}{% if txn.type in ('adjustment','other') %} ({{ txn.direction }}){% endif %}</td></tr>
+    <tr><th scope="row">Category</th><td>{{ txn.category }}</td></tr>
+    <tr><th scope="row">Amount</th><td class="num">{{ txn.amount_cents|money }}</td></tr>
+    <tr><th scope="row">Date</th><td>{{ txn.txn_date|date }}</td></tr>
+    <tr><th scope="row">Description</th><td>{{ txn.description }}</td></tr>
+    <tr><th scope="row">Reference</th><td class="mono">{{ txn.reference or '—' }}</td></tr>
+    <tr><th scope="row">Account</th><td>{{ accounts[txn.cash_account][0] if txn.cash_account in accounts else '—' }}</td></tr>
+    <tr><th scope="row">Project</th><td>{{ txn.project.name if txn.project else '—' }}</td></tr>
+    <tr><th scope="row">Member</th><td>{{ txn.member.member_number if txn.member else '—' }}</td></tr>
+    <tr><th scope="row">Created by</th><td>{{ txn.created_by.full_name if txn.created_by else 'System' }} · {{ txn.created_at|dt }}</td></tr>
+    <tr><th scope="row">Approved / rejected by</th><td>{{ txn.approved_by.full_name if txn.approved_by else ('System (provider verified)' if txn.approval_status == 'approved' else '—') }}{% if txn.approved_at %} · {{ txn.approved_at|dt }}{% endif %}</td></tr>
+    {% if txn.rejection_reason %}<tr><th scope="row">Rejection reason</th><td>{{ txn.rejection_reason }}</td></tr>{% endif %}
+    <tr><th scope="row">Evidence</th><td>{{ txn.evidence_note or '—' }}</td></tr>
+    {% if txn.reverses %}<tr><th scope="row">Reverses</th><td><a href="{{ url_for('finance.transaction', txn_id=txn.reverses.id) }}">{{ txn.reverses.txn_number }}</a></td></tr>{% endif %}
+    {% if txn.reversed_by_txn_id %}<tr><th scope="row">Reversed by</th><td><a href="{{ url_for('finance.transaction', txn_id=txn.reversed_by_txn_id) }}">view reversal</a></td></tr>{% endif %}
+  </tbody></table>
+</section>
+<section class="card">
+  <h2>Ledger lines</h2>
+  {% if txn.lines %}<div class="table-wrap"><table><thead><tr><th scope="col">Account</th><th scope="col" class="num">Debit</th><th scope="col" class="num">Credit</th></tr></thead>
+  <tbody>{% for l in txn.lines %}<tr><td>{{ accounts[l.account][0] }}</td><td class="num">{{ l.debit_cents|money if l.debit_cents else '' }}</td><td class="num">{{ l.credit_cents|money if l.credit_cents else '' }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}<p class="muted">Not posted yet. Lines are written when the transaction is approved.</p>{% endif %}
+  {% if can('approve_transaction') %}
+    {% if txn.approval_status == 'pending' %}
+    <form method="post" class="form">{{ csrf() }}
+      {{ field("evidence", "Evidence checked (e.g. statement line)") }}
+      <button class="btn" name="action" value="approve">Approve and post</button>
+    </form>
+    <form method="post" class="form">{{ csrf() }}{{ field("reason", "Reason for rejecting", required=True) }}<button class="btn danger" name="action" value="reject">Reject</button></form>
+    {% elif txn.approval_status == 'approved' and not txn.is_reversal and not txn.reversed_by_txn_id and txn.type not in ('member_contribution','distribution','project_expense','project_revenue') %}
+    <details><summary>Reverse this transaction</summary>
+      <form method="post" class="form">{{ csrf() }}{{ field("reason", "Reason", required=True) }}<button class="btn danger" name="action" value="reverse">Post reversal</button></form>
+      <p class="small muted">A reversal is a new transaction with the opposite effect. The original stays on record.</p></details>
+    {% endif %}
+  {% endif %}
+</section>
+</div>
+{% endblock %}

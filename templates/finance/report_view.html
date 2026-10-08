@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, report_body %}
+{% block title %}{{ report.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ report.title }}</h1>
+<div class="actions">
+  <a class="btn secondary" href="{{ url_for('reports.view', report_type=report_type, fmt='pdf', **args.to_dict()) }}">PDF</a>
+  <a class="btn secondary" href="{{ url_for('reports.view', report_type=report_type, fmt='csv', **args.to_dict()) }}">CSV</a>
+  {% if info.public and can('publish_reports') %}
+  <form method="post" action="{{ url_for('reports.publish', report_type=report_type) }}">{{ csrf() }}
+    {% for k, v in args.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+    <button class="btn" type="submit">Publish to public Reports page</button></form>
+  {% endif %}
+</div></div>
+{{ report_body(report) }}
+{% endblock %}

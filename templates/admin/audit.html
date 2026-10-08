@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagination, empty %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Audit log</h1>{% if can('view_audit') %}<div class="actions"><a class="btn secondary" href="{{ url_for('reports.view', report_type='audit', start=args.get('start',''), end=args.get('end','')) }}">Audit report</a></div>{% endif %}</div>
+<form method="get" class="filters">
+  <div class="field"><label for="f-action">Action contains</label><input id="f-action" name="action" value="{{ args.get('action','') }}"></div>
+  <div class="field"><label for="f-user">User email contains</label><input id="f-user" name="user" value="{{ args.get('user','') }}"></div>
+  <div class="field"><label for="f-start">From</label><input id="f-start" type="date" name="start" value="{{ args.get('start','') }}"></div>
+  <div class="field"><label for="f-end">To</label><input id="f-end" type="date" name="end" value="{{ args.get('end','') }}"></div>
+  <button class="btn secondary" type="submit">Filter</button>
+</form>
+{% if page.items %}
+<div class="table-wrap"><table><thead><tr><th scope="col">Time</th><th scope="col">User</th><th scope="col">Role</th><th scope="col">Action</th><th scope="col">Record</th><th scope="col">Old → New</th><th scope="col">Reason</th><th scope="col">IP</th></tr></thead>
+<tbody>{% for a in page.items %}<tr><td>{{ a.created_at|dt('%d %b %Y %H:%M:%S') }}</td><td>{{ a.user_email }}</td><td>{{ a.role }}</td><td class="mono small">{{ a.action }}</td><td class="mono small">{{ a.record_type or '' }} {{ a.record_id or '' }}</td>
+<td class="small">{% if a.old_value %}<span class="muted">{{ a.old_value|truncate(120) }}</span> → {% endif %}{{ (a.new_value or '')|truncate(160) }}</td><td class="small">{{ a.reason or '' }}</td><td class="small">{{ a.ip_address or '' }}</td></tr>{% endfor %}</tbody></table></div>
+{{ pagination(page, 'admin.audit') }}
+{% else %}{{ empty("No entries.") }}{% endif %}
+<p class="small muted">Audit entries cannot be edited or deleted.</p>
+{% endblock %}

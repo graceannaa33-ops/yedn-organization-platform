@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge, empty %}
+{% block title %}{{ p.name }}{% endblock %}
+{% block content %}
+<h1>{{ p.name }}</h1>
+<div class="grid grid-2">
+<section class="card">
+  <h2>Details</h2>
+  <form method="post" class="form">{{ csrf() }}<input type="hidden" name="action" value="update">
+    {{ field("name", "Organisation name", value=p.name, required=True) }}
+    {{ field("description", "Description", "textarea", p.description) }}
+    <div class="form-grid">{{ field("contact_person", "Contact person", value=p.contact_person) }}{{ field("contact_email", "Contact email", "email", p.contact_email) }}{{ field("contact_phone", "Contact phone", "tel", p.contact_phone) }}{{ field("website", "Website", "url", p.website) }}</div>
+    <div class="check"><input type="checkbox" id="f-pub" name="is_public"{% if p.is_public %} checked{% endif %}><label for="f-pub">Show publicly</label></div>
+    <div class="check"><input type="checkbox" id="f-act" name="is_active"{% if p.is_active %} checked{% endif %}><label for="f-act">Active</label></div>
+    <button class="btn" type="submit">Save</button>
+  </form>
+</section>
+<div class="stack">
+<section class="card">
+  <h2>Partner logins</h2>
+  {% if p.users %}<ul>{% for u in p.users %}<li>{{ u.full_name }} ({{ u.email }}) {{ badge('Active' if u.is_active else 'Suspended') }}
+    <form method="post" class="inline">{{ csrf() }}<input type="hidden" name="action" value="toggle_user"><input type="hidden" name="user_id" value="{{ u.id }}"><button class="btn secondary small" type="submit">{{ 'Disable' if u.is_active else 'Enable' }}</button></form></li>{% endfor %}</ul>
+  {% else %}{{ empty("No logins yet.") }}{% endif %}
+  <details><summary>Create a partner login</summary>
+    <form method="post" class="form">{{ csrf() }}<input type="hidden" name="action" value="add_user">
+      {{ field("full_name", "Full name", required=True) }}{{ field("email", "Email", "email", required=True) }}
+      {{ field("password", "Temporary password", "password", required=True, help="At least 10 characters with letters and numbers.") }}
+      <button class="btn" type="submit">Create login</button></form>
+  </details>
+  <p class="small muted">Partners only see projects assigned to this organisation.</p>
+</section>
+<section class="card"><h2>Projects</h2>{% if p.projects %}<ul>{% for pr in p.projects %}<li><a href="{{ url_for('projects.detail', project_id=pr.id) }}">{{ pr.name }}</a> {{ badge(pr.status) }}</li>{% endfor %}</ul>{% else %}{{ empty() }}{% endif %}</section>
+</div>
+</div>
+{% endblock %}

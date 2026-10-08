@@ -1,0 +1,190 @@
+{# Reusable template pieces. No JavaScript anywhere. #}
+
+{% macro csrf() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+{% macro navlink(endpoint, label, badge=None) -%}
+<li><a href="{{ url_for(endpoint, **kwargs) }}"{% if request.endpoint == endpoint %} aria-current="page"{% endif %}>{{ label }}{% if badge %} <span class="nav-badge">{{ badge }}</span>{% endif %}</a></li>
+{%- endmacro %}
+
+{% macro badge(text) -%}
+<span class="badge {{ (text or '')|lower|replace(' ', '-')|replace('_', '-') }}">{{ text }}</span>
+{%- endmacro %}
+
+{% macro field(name, label, type="text", value="", required=False, help=None, error=None, autocomplete=None, attrs="") -%}
+<div class="field">
+  <label for="f-{{ name }}">{{ label }}{% if required %} <span aria-hidden="true">*</span>{% endif %}</label>
+  {% if type == "textarea" %}
+  <textarea id="f-{{ name }}" name="{{ name }}"{% if required %} required{% endif %}{% if error %} aria-invalid="true" aria-describedby="e-{{ name }}"{% elif help %} aria-describedby="h-{{ name }}"{% endif %} {{ attrs|safe }}>{{ value or "" }}</textarea>
+  {% else %}
+  <input id="f-{{ name }}" type="{{ type }}" name="{{ name }}"{% if type != "file" and type != "password" %} value="{{ value if value is not none else '' }}"{% endif %}{% if required %} required{% endif %}{% if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}{% if error %} aria-invalid="true" aria-describedby="e-{{ name }}"{% elif help %} aria-describedby="h-{{ name }}"{% endif %} {{ attrs|safe }}>
+  {% endif %}
+  {% if help %}<span class="help" id="h-{{ name }}">{{ help }}</span>{% endif %}
+  {% if error %}<span class="error" id="e-{{ name }}" role="alert">{{ error }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro select(name, label, options, selected=None, required=False, blank=None) -%}
+{# options: list of (value, text) #}
+<div class="field">
+  <label for="f-{{ name }}">{{ label }}{% if required %} <span aria-hidden="true">*</span>{% endif %}</label>
+  <select id="f-{{ name }}" name="{{ name }}"{% if required %} required{% endif %}>
+    {% if blank is not none %}<option value="">{{ blank }}</option>{% endif %}
+    {% for value, text in options %}
+    <option value="{{ value }}"{% if selected is not none and value|string == selected|string %} selected{% endif %}>{{ text }}</option>
+    {% endfor %}
+  </select>
+</div>
+{%- endmacro %}
+
+{% macro progress(pct, label=None) -%}
+<div>
+  <div class="progress-label"><span>{{ label or "Progress" }}</span><span>{{ pct }}%</span></div>
+  <progress max="100" value="{{ pct }}" aria-label="{{ label or 'Progress' }} {{ pct }} percent">{{ pct }}%</progress>
+</div>
+{%- endmacro %}
+
+{% macro pagination(page, endpoint) -%}
+{% if page.pages > 1 %}
+<nav class="pagination" aria-label="Pages">
+  {% set args = request.args.to_dict() %}
+  {% if page.has_prev %}{% set _ = args.update({'page': page.page - 1}) %}<a class="btn secondary small" href="{{ url_for(endpoint, **dict(kwargs, **args)) }}">← Previous</a>{% endif %}
+  <span class="muted small">Page {{ page.page }} of {{ page.pages }} ({{ page.total }} records)</span>
+  {% if page.has_next %}{% set _ = args.update({'page': page.page + 1}) %}<a class="btn secondary small" href="{{ url_for(endpoint, **dict(kwargs, **args)) }}">Next →</a>{% endif %}
+</nav>
+{% endif %}
+{%- endmacro %}
+
+{% macro empty(text="Nothing to show yet.") -%}
+<p class="empty">{{ text }}</p>
+{%- endmacro %}
+
+{% macro stat(label, value, hint=None, tone="", href=None) -%}
+{% if href %}<a class="stat {{ tone }}" href="{{ href }}">{% else %}<div class="stat {{ tone }}">{% endif %}
+  <div class="label">{{ label }}</div>
+  <div class="value">{{ value }}</div>
+  {% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+{% if href %}</a>{% else %}</div>{% endif %}
+{%- endmacro %}
+
+{% macro report_body(report) -%}
+<p class="muted small">{{ report.organization }} · {{ report.period_label }} · generated {{ report.generated_at }}</p>
+{% if report.summary %}
+<div class="card">
+  <table class="kv">
+    <tbody>
+    {% for label, value in report.summary %}
+      <tr{% if loop.last and (label.startswith('Calculated') or label.startswith('Net') or label.startswith('Closing')) %} class="total"{% endif %}><th scope="row">{{ label }}</th><td class="num">{{ value }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% for section in report.sections %}
+<h2>{{ section.title }}</h2>
+{% if section.rows %}
+<div class="table-wrap">
+  <table>
+    <thead><tr>{% for c in section.columns %}<th scope="col">{{ c }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for row in section.rows %}
+      <tr>{% for cell in row %}<td{% if cell.cents is defined %} class="num"{% endif %}>{{ cell }}</td>{% endfor %}</tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}{{ empty("No records in this period.") }}{% endif %}
+{% endfor %}
+{% for note in report.notes %}<p class="notice info small">{{ note }}</p>{% endfor %}
+{%- endmacro %}
+
+{% macro timeline(items) -%}
+{% if items %}
+<ol class="timeline">
+  {% for u in items|reverse %}
+  <li class="{{ u.kind }}">
+    <div class="when">{{ u.created_at|dt }}{% if u.created_by %} · {{ u.created_by.full_name }}{% endif %}</div>
+    <div class="title">{{ u.title }}</div>
+    {% if u.body %}<div class="small">{{ u.body|paragraphs }}</div>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}{{ empty("No timeline events yet.") }}{% endif %}
+{%- endmacro %}
+
+{% macro project_finance(fin) -%}
+<table class="kv">
+  <tbody>
+    <tr><th scope="row">Budget</th><td class="num">{{ fin.budget|money }}</td></tr>
+    <tr><th scope="row">Approved funding</th><td class="num">{{ fin.approved|money }}</td></tr>
+    <tr><th scope="row">Funds released</th><td class="num">{{ fin.released|money }}</td></tr>
+    <tr><th scope="row">Funds spent (verified expenses)</th><td class="num">{{ fin.spent|money }}</td></tr>
+    <tr><th scope="row">Remaining released funds</th><td class="num">{{ fin.remaining_funds|money }}</td></tr>
+    <tr><th scope="row">Budget variance (budget − spent)</th><td class="num">{{ fin.budget_variance|money }}</td></tr>
+  </tbody>
+</table>
+<h3>Result</h3>
+<table class="kv">
+  <tbody>
+    <tr><th scope="row">Revenue</th><td class="num">{{ fin.revenue|money }}</td></tr>
+    <tr><th scope="row">Expenses</th><td class="num">− {{ fin.expenses|money }}</td></tr>
+    <tr class="total"><th scope="row">Net result ({{ "profit" if fin.net >= 0 else "loss" }})</th><td class="num">{{ fin.net|money }}</td></tr>
+  </tbody>
+</table>
+<p class="small muted">Revenue is not profit. Net result = verified revenue − verified expenses. Results are not guaranteed.</p>
+{%- endmacro %}
+
+{% macro contribution_example() -%}
+<div class="grid grid-2">
+  <div class="card">
+    <h3>Example: a partial payment</h3>
+    <table class="kv example-table"><tbody>
+      <tr><th scope="row">Required contribution</th><td class="num">KSh 10,000</td></tr>
+      <tr><th scope="row">Member pays</th><td class="num">KSh 2,000</td></tr>
+      <tr><th scope="row">Total paid</th><td class="num">KSh 2,000</td></tr>
+      <tr><th scope="row">Remaining</th><td class="num">KSh 8,000</td></tr>
+      <tr class="total"><th scope="row">Status</th><td><span class="badge partially-paid">Partially Paid</span></td></tr>
+    </tbody></table>
+  </div>
+  <div class="card">
+    <h3>Example: completing in parts</h3>
+    <table class="kv example-table"><tbody>
+      <tr><th scope="row">Payment 1</th><td class="num">KSh 2,000</td></tr>
+      <tr><th scope="row">Payment 2</th><td class="num">KSh 3,000</td></tr>
+      <tr><th scope="row">Payment 3</th><td class="num">KSh 5,000</td></tr>
+      <tr><th scope="row">Total contributions</th><td class="num">KSh 10,000</td></tr>
+      <tr><th scope="row">Remaining</th><td class="num">KSh 0</td></tr>
+      <tr class="total"><th scope="row">Status</th><td><span class="badge fully-paid">Fully Paid</span></td></tr>
+    </tbody></table>
+  </div>
+</div>
+<p class="small muted">Amounts are an illustration. The actual required contribution is set under {{ org_short }}'s approved rules and is currently <strong>{{ setting('contribution_amount_cents')|int|money }}</strong>. Every payment is recorded separately and permanently. Contributions are not guaranteed investments and carry no guaranteed return.</p>
+{%- endmacro %}
+
+{% macro risk_notice() -%}
+<aside class="notice" aria-label="Risk disclosure">
+  <strong>Risk disclosure.</strong> Participation in {{ org_short }} activities does not guarantee financial returns. Projects and enterprises may experience losses, delays, unexpected costs, market changes or other risks. Please understand the
+  <a href="{{ url_for('public.legal', slug='contribution-rules') }}">contribution rules</a>, project risks and
+  <a href="{{ url_for('public.legal', slug='distribution-rules') }}">distribution rules</a> before participating.
+  <a href="{{ url_for('public.legal', slug='risk-disclosure') }}">Full risk disclosure</a>.
+</aside>
+{%- endmacro %}
+
+{% macro transparency_band() -%}
+<section class="section-band" aria-labelledby="ta-title">
+  <h2 id="ta-title">Transparency &amp; Accountability</h2>
+  <p>{{ org_short }} believes that trust is built through transparency, accurate records and responsible management.</p>
+  <p>The organization maintains financial records for contributions, project funding, project revenue, expenses, distributions and other approved transactions. Members should be able to understand how organizational funds are recorded and how approved projects are performing.</p>
+  <p>Public transparency information protects member privacy and never exposes private identification or payment information.</p>
+  <ul class="link-list">
+    <li><a class="btn secondary small" href="{{ url_for('transparency.index') }}">Transparency Center</a></li>
+    <li><a class="btn secondary small" href="{{ url_for('transparency.reports') }}">Financial Reports</a></li>
+    <li><a class="btn secondary small" href="{{ url_for('public.projects') }}">Project Reports</a></li>
+    <li><a class="btn secondary small" href="{{ url_for('public.legal', slug='contribution-rules') }}">Contribution Rules</a></li>
+    <li><a class="btn secondary small" href="{{ url_for('public.legal', slug='distribution-rules') }}">Distribution Rules</a></li>
+    <li><a class="btn secondary small" href="{{ url_for('public.complaints') }}">Complaints</a></li>
+    <li><a class="btn secondary small" href="{{ url_for('public.governance') }}#audit">Audit Information</a></li>
+  </ul>
+</section>
+{%- endmacro %}

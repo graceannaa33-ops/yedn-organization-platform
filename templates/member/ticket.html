@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, badge %}
+{% block title %}Ticket {{ ticket.ticket_number }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ ticket.subject }}</h1><p class="kv-inline"><span class="mono">{{ ticket.ticket_number }}</span><span>{{ ticket.category }}</span><span>{{ badge(ticket.status) }}</span>{% if ticket.assigned_to %}<span>Handled by {{ ticket.assigned_to.full_name }}</span>{% endif %}</p></div></div>
+<section class="card">
+  <p class="small muted">{{ ticket.created_at|dt }}</p>{{ ticket.description|paragraphs }}
+  {% for r in ticket.responses if not r.is_internal %}<hr><p class="small muted">{{ r.author.full_name if r.author else 'System' }} · {{ r.created_at|dt }}</p>{{ r.body|paragraphs }}{% endfor %}
+  {% if ticket.resolution %}<h3>Resolution</h3>{{ ticket.resolution|paragraphs }}{% endif %}
+</section>
+{% if ticket.status != 'Closed' %}
+<section class="card"><form method="post" class="form">{{ csrf() }}{{ field("body", "Add a reply", "textarea", required=True) }}<button class="btn" type="submit">Send reply</button></form></section>
+{% endif %}
+{% endblock %}

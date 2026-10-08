@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, empty %}
+{% block title %}{{ _('Payments') }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Payment history</h1>
+{% if summary.remaining > 0 and member.status == 'active' %}<div class="actions"><a class="btn" href="{{ url_for('payments.new') }}">{{ _('Make a payment') }}</a></div>{% endif %}</div>
+{% if history %}
+<div class="table-wrap"><table>
+  <thead><tr><th scope="col">Date</th><th scope="col">Time</th><th scope="col" class="num">Amount</th><th scope="col">Method</th><th scope="col">Reference</th><th scope="col">Status</th><th scope="col" class="num">Total paid</th><th scope="col" class="num">Remaining</th><th scope="col"><span class="sr-only">Receipt</span></th></tr></thead>
+  <tbody>{% for row in history %}{% set p = row.payment %}
+  <tr><td>{{ p.created_at|dt('%d %b %Y') }}</td><td>{{ p.created_at|dt('%H:%M') }}</td><td class="num">{{ p.amount_cents|money }}</td><td>{{ p.method|upper }}</td>
+  <td class="mono small"><a href="{{ url_for('payments.status', reference=p.reference) }}">{{ p.reference }}</a>{% if p.provider_receipt %}<br><span class="muted">{{ p.provider_receipt }}</span>{% endif %}</td>
+  <td>{{ badge(p.status) }}</td><td class="num">{{ row.total_paid|money }}</td><td class="num">{{ row.remaining|money }}</td>
+  <td>{% if p.status in ('Successful','Reversed') %}<a href="{{ url_for('payments.receipt', reference=p.reference) }}">Receipt</a>{% endif %}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+<p class="small muted">Payments are never overwritten. A reversed payment stays on record and no longer counts towards your total.</p>
+{% else %}{{ empty("You have not made any payments yet.") }}{% endif %}
+{% endblock %}

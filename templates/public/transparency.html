@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stat, badge, empty, transparency_band with context %}
+{% block title %}{{ _('Transparency') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Transparency Center</h1>
+<p class="muted">{{ org_full }}. Figures are calculated from the organization's ledger. Personal details of members are never shown here.</p></div></div>
+{{ transparency_band() }}
+
+<h2>Membership</h2>
+<div class="stats">
+  {{ stat("Total members", counts.total) }}
+  {{ stat("Fully paid", counts.full, tone="") }}
+  {{ stat("Partially paid", counts.partial, tone="amber") }}
+  {{ stat("Not yet paid", counts.unpaid, tone="red") }}
+  {{ stat("Verified contributions", s.contributions|money, tone="blue") }}
+</div>
+{% set total_m = counts.full + counts.partial + counts.unpaid %}
+{% if total_m %}
+<div class="card bars" aria-label="Members by payment status">
+  {% for label, n, tone in [("Fully paid", counts.full, ""), ("Partially paid", counts.partial, "amber"), ("Not paid", counts.unpaid, "red")] %}
+  <div class="bar-row"><span>{{ label }}</span><div class="bar-track"><div class="bar {{ tone }} w-{{ (n * 100 / total_m)|round|int }}"></div></div><span class="num">{{ n }} ({{ (n * 100 / total_m)|round|int }}%)</span></div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2>Financial position</h2>
+<div class="grid grid-2">
+  <section class="card">
+    <h3>Calculated from the ledger</h3>
+    <table class="kv"><tbody>
+      <tr><th scope="row">Opening balance</th><td class="num">{{ s.position.opening|money }}</td></tr>
+      <tr><th scope="row">+ Verified income</th><td class="num">{{ s.position.total_income|money }}</td></tr>
+      <tr><th scope="row">− Verified outflows</th><td class="num">{{ s.position.total_outflows|money }}</td></tr>
+      <tr><th scope="row">+ Approved adjustments</th><td class="num">{{ s.position.adjustments|money }}</td></tr>
+      <tr class="total"><th scope="row">= Calculated balance</th><td class="num">{{ s.position.closing|money }}</td></tr>
+    </tbody></table>
+    <details><summary>Breakdown</summary>
+      <table class="kv"><tbody>
+      {% for label, v in s.position.income %}<tr><th scope="row">+ {{ label }}</th><td class="num">{{ v|money }}</td></tr>{% endfor %}
+      {% for label, v in s.position.outflows %}<tr><th scope="row">− {{ label }}</th><td class="num">{{ v|money }}</td></tr>{% endfor %}
+      </tbody></table>
+    </details>
+  </section>
+  <section class="card">
+    <h3>Where the money is</h3>
+    <table class="kv"><tbody>
+      <tr><th scope="row">Bank balance</th><td class="num">{{ s.bank|money }}</td></tr>
+      <tr><th scope="row">Mobile money (M-PESA) balance</th><td class="num">{{ s.mpesa|money }}</td></tr>
+      <tr><th scope="row">Reserves</th><td class="num">{{ s.reserves|money }}</td></tr>
+      <tr><th scope="row">Available funds</th><td class="num">{{ s.available|money }}</td></tr>
+      <tr><th scope="row">Funds invested (released to projects)</th><td class="num">{{ s.invested|money }}</td></tr>
+      <tr><th scope="row">Project revenue</th><td class="num">{{ s.project_revenue|money }}</td></tr>
+      <tr><th scope="row">Project expenses</th><td class="num">{{ s.project_expenses|money }}</td></tr>
+      <tr><th scope="row">Total distributions paid</th><td class="num">{{ s.distributions|money }}</td></tr>
+    </tbody></table>
+    <p class="notice info small"><strong>Organisation-reported, not a live bank feed.</strong> Balances come from the ledger and are reconciled against statements.
+      Last reconciled: <strong>{% if last_reconciled %}{{ last_reconciled|replace('T', ' ') }} (UTC){% else %}not yet reconciled{% endif %}</strong>.
+      {% for acc, rec in recs.items() if rec %}<br>{{ 'Bank' if acc == 'CASH_BANK' else 'M-PESA' }} statement of {{ rec.statement_date|date }}: difference {{ rec.difference_cents|money }}.{% endfor %}</p>
+  </section>
+</div>
+
+<h2>Projects</h2>
+<div class="stats">{{ stat("Active projects", active) }}{{ stat("Completed projects", completed) }}</div>
+{% if projects %}
+<div class="table-wrap"><table>
+  <thead><tr><th scope="col">Project</th><th scope="col">Status</th><th scope="col">Progress</th><th scope="col" class="num">Released</th><th scope="col" class="num">Revenue</th><th scope="col" class="num">Expenses</th><th scope="col" class="num">Net result</th></tr></thead>
+  <tbody>{% for p, fin in projects %}
+    <tr><td><a href="{{ url_for('public.project', project_id=p.id) }}">{{ p.name }}</a></td><td>{{ badge(p.status) }}</td><td>{{ p.progress_percent }}%</td>
+    <td class="num">{{ fin.released|money }}</td><td class="num">{{ fin.revenue|money }}</td><td class="num">{{ fin.expenses|money }}</td><td class="num">{{ fin.net|money }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% else %}{{ empty("No public projects yet.") }}{% endif %}
+
+<h2>Recent activity</h2>
+{% if activity %}
+<div class="table-wrap"><table>
+  <thead><tr><th scope="col">When</th><th scope="col">Activity</th><th scope="col" class="num">Amount</th></tr></thead>
+  <tbody>{% for a in activity %}<tr><td>{{ a.when|dt }}</td><td>{{ a.text }}</td><td class="num">{{ a.amount|money }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}{{ empty() }}{% endif %}
+<p class="small muted">See also: <a href="{{ url_for('transparency.reports') }}">published reports</a> · <a href="{{ url_for('public.legal', slug='distribution-rules') }}">distribution rules</a></p>
+{% endblock %}

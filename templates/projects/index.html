@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, pagination, empty %}
+{% block title %}Projects{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Projects</h1>{% if can('manage_projects') %}<div class="actions"><a class="btn" href="{{ url_for('projects.new') }}">New project proposal</a></div>{% endif %}</div>
+<form method="get" class="filters"><div class="field"><label for="f-status">Status</label><select id="f-status" name="status"><option value="">All</option>{% for s in statuses %}<option{% if s == status %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div><button class="btn secondary" type="submit">Filter</button></form>
+{% if rows %}
+<div class="table-wrap"><table><thead><tr><th scope="col">Project</th><th scope="col">Status</th><th scope="col">Progress</th><th scope="col" class="num">Approved</th><th scope="col" class="num">Released</th><th scope="col" class="num">Revenue</th><th scope="col" class="num">Expenses</th><th scope="col" class="num">Net</th></tr></thead>
+<tbody>{% for p, fin in rows %}<tr><td><a href="{{ url_for('projects.detail', project_id=p.id) }}">{{ p.name }}</a><br><span class="small muted">{{ p.category }}{% if p.partner %} · {{ p.partner.name }}{% endif %}</span></td><td>{{ badge(p.status) }}</td><td>{{ p.progress_percent }}%</td>
+<td class="num">{{ fin.approved|money }}</td><td class="num">{{ fin.released|money }}</td><td class="num">{{ fin.revenue|money }}</td><td class="num">{{ fin.expenses|money }}</td><td class="num">{{ fin.net|money }}</td></tr>{% endfor %}</tbody></table></div>
+{{ pagination(page, 'projects.index') }}
+{% else %}{{ empty("No projects.") }}{% endif %}
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, field, select %}
+{% block title %}{{ _('Contact') }}{% endblock %}
+{% block content %}
+<h1>Contact us</h1>
+<div class="grid grid-2">
+  <section class="card">
+    <h2>Details</h2>
+    <p>{% if setting('contact_email') %}Email: <strong>{{ setting('contact_email') }}</strong><br>{% endif %}
+    {% if setting('contact_phone') %}Phone: <strong>{{ setting('contact_phone') }}</strong><br>{% endif %}
+    {% if setting('contact_address') %}Address: {{ setting('contact_address') }}{% endif %}</p>
+    <p class="small muted">Members can also open a support ticket from their dashboard.</p>
+  </section>
+  <section class="card">
+    <h2>Send a message</h2>
+    <form method="post" class="form">
+      {{ csrf() }}
+      <input type="hidden" name="category" value="General enquiry">
+      {{ field("name", "Your name", value=form.name, required=True) }}
+      {{ field("email", "Email", "email", form.email, True) }}
+      {{ field("phone", "Phone (optional)", "tel", form.phone) }}
+      {{ field("subject", "Subject", value=form.subject, required=True) }}
+      {{ field("description", "Message", "textarea", form.description, True) }}
+      <div class="honeypot" aria-hidden="true"><label for="f-website">Leave empty</label><input id="f-website" name="website" tabindex="-1" autocomplete="off"></div>
+      <button class="btn" type="submit">Send</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

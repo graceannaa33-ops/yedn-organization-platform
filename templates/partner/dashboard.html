@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, progress, empty %}
+{% block title %}Partner dashboard{% endblock %}
+{% block content %}
+<p class="muted">{{ org_short }} partner portal</p>
+<h1>{{ current_user.partner.name if current_user.partner else 'Partner portal' }}</h1>
+<p class="muted">Your assigned projects. Report progress, milestones, expenses and revenue here; finance staff verify money items before they reach the ledger.</p>
+{% if rows %}
+<div class="grid grid-2">{% for p, fin in rows %}
+<article class="card">
+  <div class="card-head"><h2><a href="{{ url_for('partner.project', project_id=p.id) }}">{{ p.name }}</a></h2>{{ badge(p.status) }}</div>
+  {{ progress(p.progress_percent) }}
+  <table class="kv"><tbody>
+    <tr><th scope="row">Funds released</th><td class="num">{{ fin.released|money }}</td></tr>
+    <tr><th scope="row">Verified expenses</th><td class="num">{{ fin.expenses|money }}</td></tr>
+    <tr><th scope="row">Remaining released funds</th><td class="num">{{ fin.remaining_funds|money }}</td></tr>
+    <tr><th scope="row">Verified revenue</th><td class="num">{{ fin.revenue|money }}</td></tr>
+    <tr><th scope="row">Awaiting verification</th><td class="num">{{ (fin.reported_expenses + fin.reported_revenue)|money }}</td></tr>
+  </tbody></table>
+</article>
+{% endfor %}</div>
+{% else %}{{ empty("No projects are assigned to your organisation yet.") }}{% endif %}
+{% endblock %}

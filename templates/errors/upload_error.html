@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Upload problem{% endblock %}
+{% block content %}
+<section class="error-page">
+  <p class="code">!</p>
+  <h1>The file could not be uploaded</h1>
+  <p>{{ message or "Please check the file and try again." }}</p>
+  <p class="muted">Allowed: PDF, JPG, JPEG or PNG, up to {{ config.MAX_FILE_SIZE // (1024*1024) }} MB.</p>
+  <p><a class="btn" href="{{ back or request.referrer or url_for('public.home') }}">Go back</a></p>
+</section>
+{% endblock %}
